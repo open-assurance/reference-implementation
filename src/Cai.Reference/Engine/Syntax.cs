@@ -42,6 +42,7 @@ public static class Cs
         _ => m.GetFirstToken(),
     };
 
+    public static string EnclosingNamespace(SyntaxNode n) => n.Ancestors().OfType<BaseNamespaceDeclarationSyntax>().FirstOrDefault()?.Name.ToString() ?? n.SyntaxTree.GetRoot().DescendantNodes().OfType<BaseNamespaceDeclarationSyntax>().FirstOrDefault()?.Name.ToString() ?? "";
     public static TypeDeclarationSyntax? EnclosingType(SyntaxNode n) => n.Ancestors().OfType<TypeDeclarationSyntax>().FirstOrDefault();
     public static string TypeName(SyntaxNode n) => EnclosingType(n)?.Identifier.Text ?? "";
     public static SyntaxNode? EnclosingMethod(SyntaxNode n) => n.Ancestors().FirstOrDefault(a => a is BaseMethodDeclarationSyntax or LocalFunctionStatementSyntax or AccessorDeclarationSyntax or AnonymousFunctionExpressionSyntax);

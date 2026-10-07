@@ -120,10 +120,6 @@
         "^blocking-on-async-code$"
       ],
       "dimensions": [
-        "X1",
-        "PF3"
-      ],
-      "scoreDimensions": [
         "X1"
       ]
     },
@@ -204,10 +200,6 @@
         "^ci-secret-exposure$"
       ],
       "dimensions": [
-        "D36",
-        "D29"
-      ],
-      "scoreDimensions": [
         "D36"
       ]
     },
@@ -232,10 +224,6 @@
         "^ci-workflow-injection$"
       ],
       "dimensions": [
-        "D36",
-        "D29"
-      ],
-      "scoreDimensions": [
         "D36"
       ]
     },
@@ -244,11 +232,6 @@
         "^cleartext-transmission$"
       ],
       "dimensions": [
-        "D29",
-        "S1",
-        "D31"
-      ],
-      "scoreDimensions": [
         "D29"
       ]
     },
@@ -258,7 +241,8 @@
       ],
       "dimensions": [
         "D29"
-      ]
+      ],
+      "family": "untrusted-data-executed"
     },
     "collection-modified-during-enumeration": {
       "rules": [
@@ -297,10 +281,6 @@
         "^committed-private-key$"
       ],
       "dimensions": [
-        "D13",
-        "D28"
-      ],
-      "scoreDimensions": [
         "D13"
       ]
     },
@@ -445,10 +425,6 @@
         "^dependencies-not-locked$"
       ],
       "dimensions": [
-        "SC1",
-        "D12"
-      ],
-      "scoreDimensions": [
         "SC1"
       ]
     },
@@ -497,10 +473,6 @@
         "^download-without-integrity-check$"
       ],
       "dimensions": [
-        "D31",
-        "D36"
-      ],
-      "scoreDimensions": [
         "D31"
       ]
     },
@@ -525,10 +497,6 @@
         "^empty-catch-block$"
       ],
       "dimensions": [
-        "X3",
-        "D17"
-      ],
-      "scoreDimensions": [
         "X3"
       ]
     },
@@ -593,10 +561,6 @@
         "^flaky-test$"
       ],
       "dimensions": [
-        "D11",
-        "D10"
-      ],
-      "scoreDimensions": [
         "D11"
       ]
     },
@@ -653,36 +617,27 @@
         "^hardcoded-credential$"
       ],
       "dimensions": [
-        "D13",
-        "D28"
-      ],
-      "scoreDimensions": [
         "D13"
-      ]
+      ],
+      "family": "hardcoded-secret"
     },
     "hardcoded-cryptographic-key": {
       "rules": [
         "^hardcoded-cryptographic-key$"
       ],
       "dimensions": [
-        "D13",
-        "D28"
-      ],
-      "scoreDimensions": [
         "D13"
-      ]
+      ],
+      "family": "hardcoded-secret"
     },
     "hardcoded-password": {
       "rules": [
         "^hardcoded-password$"
       ],
       "dimensions": [
-        "D13",
-        "D28"
-      ],
-      "scoreDimensions": [
         "D13"
-      ]
+      ],
+      "family": "hardcoded-secret"
     },
     "high-cognitive-complexity": {
       "rules": [
@@ -690,7 +645,8 @@
       ],
       "dimensions": [
         "D2"
-      ]
+      ],
+      "family": "complexity"
     },
     "high-cyclomatic-complexity": {
       "rules": [
@@ -698,7 +654,8 @@
       ],
       "dimensions": [
         "D1"
-      ]
+      ],
+      "family": "complexity"
     },
     "host-namespace-sharing": {
       "rules": [
@@ -737,10 +694,6 @@
         "^improper-certificate-validation$"
       ],
       "dimensions": [
-        "D29",
-        "S1"
-      ],
-      "scoreDimensions": [
         "D29"
       ]
     },
@@ -766,7 +719,8 @@
       ],
       "dimensions": [
         "IC1"
-      ]
+      ],
+      "family": "incomplete"
     },
     "index-access-outside-bounds-guard": {
       "rules": [
@@ -798,7 +752,8 @@
       ],
       "dimensions": [
         "D29"
-      ]
+      ],
+      "family": "untrusted-data-executed"
     },
     "insecure-randomness": {
       "rules": [
@@ -813,12 +768,9 @@
         "^insufficient-password-hashing$"
       ],
       "dimensions": [
-        "D29",
-        "S1"
-      ],
-      "scoreDimensions": [
         "D29"
-      ]
+      ],
+      "family": "weak-password-hashing"
     },
     "integration-event-leaks-domain-type": {
       "rules": [
@@ -865,11 +817,6 @@
         "^layer-dependency-violation$"
       ],
       "dimensions": [
-        "AX4",
-        "D7",
-        "D5"
-      ],
-      "scoreDimensions": [
         "AX4"
       ]
     },
@@ -950,10 +897,6 @@
         "^missing-authorization$"
       ],
       "dimensions": [
-        "D29",
-        "C2"
-      ],
-      "scoreDimensions": [
         "D29"
       ]
     },
@@ -1010,11 +953,6 @@
         "^module-dependency-cycle$"
       ],
       "dimensions": [
-        "AX3",
-        "D5",
-        "D7"
-      ],
-      "scoreDimensions": [
         "AX3"
       ]
     },
@@ -1047,10 +985,6 @@
         "^mutable-image-reference$"
       ],
       "dimensions": [
-        "D31",
-        "D36"
-      ],
-      "scoreDimensions": [
         "D31"
       ]
     },
@@ -1099,12 +1033,9 @@
         "^not-implemented-placeholder$"
       ],
       "dimensions": [
-        "GD1",
-        "IC1"
-      ],
-      "scoreDimensions": [
         "GD1"
-      ]
+      ],
+      "family": "incomplete"
     },
     "null-dereference": {
       "rules": [
@@ -1183,10 +1114,6 @@
         "^oversized-source-file$"
       ],
       "dimensions": [
-        "R3",
-        "D3"
-      ],
-      "scoreDimensions": [
         "R3"
       ]
     },
@@ -1363,10 +1290,6 @@
         "^sensitive-data-in-logs$"
       ],
       "dimensions": [
-        "D32",
-        "D29"
-      ],
-      "scoreDimensions": [
         "D32"
       ]
     },
@@ -1375,10 +1298,6 @@
         "^sensitive-data-in-url$"
       ],
       "dimensions": [
-        "D32",
-        "S1"
-      ],
-      "scoreDimensions": [
         "D32"
       ]
     },
@@ -1387,10 +1306,6 @@
         "^server-side-request-forgery$"
       ],
       "dimensions": [
-        "D29",
-        "X14"
-      ],
-      "scoreDimensions": [
         "D29"
       ]
     },
@@ -1415,10 +1330,6 @@
         "^skipped-test-without-reason$"
       ],
       "dimensions": [
-        "D10",
-        "IC1"
-      ],
-      "scoreDimensions": [
         "D10"
       ]
     },
@@ -1499,10 +1410,6 @@
         "^token-signature-or-expiry-not-validated$"
       ],
       "dimensions": [
-        "D29",
-        "S1"
-      ],
-      "scoreDimensions": [
         "D29"
       ]
     },
@@ -1519,10 +1426,6 @@
         "^unbounded-allocation-from-untrusted-length$"
       ],
       "dimensions": [
-        "X15",
-        "D29"
-      ],
-      "scoreDimensions": [
         "X15"
       ]
     },
@@ -1571,11 +1474,6 @@
         "^unreachable-code$"
       ],
       "dimensions": [
-        "D17",
-        "X12",
-        "IC1"
-      ],
-      "scoreDimensions": [
         "D17"
       ]
     },
@@ -1656,10 +1554,6 @@
         "^vulnerable-dependency$"
       ],
       "dimensions": [
-        "D30",
-        "D12"
-      ],
-      "scoreDimensions": [
         "D30"
       ]
     },
@@ -1668,10 +1562,6 @@
         "^weak-cryptographic-algorithm$"
       ],
       "dimensions": [
-        "D29",
-        "S1"
-      ],
-      "scoreDimensions": [
         "D29"
       ]
     },
@@ -1680,12 +1570,9 @@
         "^weak-hash-algorithm$"
       ],
       "dimensions": [
-        "D29",
-        "S1"
-      ],
-      "scoreDimensions": [
         "D29"
-      ]
+      ],
+      "family": "weak-password-hashing"
     },
     "workload-syscall-confinement": {
       "rules": [

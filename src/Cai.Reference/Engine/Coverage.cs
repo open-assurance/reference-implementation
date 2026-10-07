@@ -26,7 +26,6 @@ public static class Coverage
     /// <summary>Taxonomy concepts this engine has no detector for, with the reason, for the mapping's `unmapped` list.</summary>
     public static readonly IReadOnlyDictionary<string, string> UnmappedConceptReasons = new Dictionary<string, string>(StringComparer.Ordinal)
     {
-        ["null-dereference"] = "flow-sensitive null analysis is not implemented; X5 measures nullable enablement and suppression",
         ["outdated-dependency"] = "needs registry data (latest versions); the engine runs offline",
         ["deprecated-dependency"] = "needs registry data (deprecation metadata); the engine runs offline",
         ["unused-dependency"] = "npm concept", ["undeclared-dependency"] = "npm concept", ["misplaced-dev-dependency"] = "npm concept",

@@ -32,7 +32,7 @@ public static class CodeHealth
                 var cog = Cognitive(body);
                 var loc = ctx.Loc(Cs.IdentifierOf(m));
                 var name = $"{Cs.TypeName(m)}.{Cs.NameOf(m)}";
-                if (cc > 15) ctx.Add(new Finding("high-cyclomatic-complexity", "D1", $"{name} has cyclomatic complexity {cc} (threshold 15): decisions counted per branch, with lookup-table switches counted once", loc.File, loc.Line, loc.Line, cc > 30 ? 2 : 1));
+                if (cc > 20) ctx.Add(new Finding("high-cyclomatic-complexity", "D1", $"{name} has cyclomatic complexity {cc} (threshold 20): decisions counted per branch, with lookup-table switches counted once", loc.File, loc.Line, loc.Line, cc > 35 ? 2 : 1));
                 if (cog > 15) ctx.Add(new Finding("high-cognitive-complexity", "D2", $"{name} has cognitive complexity {cog} (threshold 15): nesting-weighted branches, boolean-operator changes and recursion", loc.File, loc.Line, loc.Line, cog > 30 ? 2 : 1));
             }
         }
@@ -49,7 +49,7 @@ public static class CodeHealth
         {
             switch (n)
             {
-                case IfStatementSyntax or WhileStatementSyntax or DoStatementSyntax or ForStatementSyntax or CommonForEachStatementSyntax or CatchClauseSyntax or ConditionalExpressionSyntax or WhenClauseSyntax: cc++; break;
+                case IfStatementSyntax or WhileStatementSyntax or DoStatementSyntax or ForStatementSyntax or CommonForEachStatementSyntax or CatchClauseSyntax or ConditionalExpressionSyntax: cc++; break;
                 case BinaryExpressionSyntax b when b.IsKind(SyntaxKind.LogicalAndExpression) || b.IsKind(SyntaxKind.LogicalOrExpression) || b.IsKind(SyntaxKind.CoalesceExpression): cc++; break;
                 case AssignmentExpressionSyntax a when a.IsKind(SyntaxKind.CoalesceAssignmentExpression): cc++; break;
                 case SwitchStatementSyntax s:
@@ -156,7 +156,7 @@ public static class CodeHealth
 
     private static void Duplication(ScanContext ctx)
     {
-        const int Window = 40, MinClone = 50, MinLines = 5;
+        const int Window = 40, MinClone = 70, MinLines = 7;
         var streams = new List<List<Tok>>();
         var predicates = new Dictionary<string, List<(string file, int line)>>(StringComparer.Ordinal);
         foreach (var (p, tree) in ctx.Workspace.ProductionTrees)
@@ -168,7 +168,10 @@ public static class CodeHealth
             {
                 if (t.IsKind(SyntaxKind.EndOfFileToken)) continue;
                 // data-only shapes are not clones: auto-properties, record parameter lists, usings, attributes, namespace headers
-                if (t.Parent?.AncestorsAndSelf().Any(a => a is UsingDirectiveSyntax or AttributeListSyntax || a is PropertyDeclarationSyntax pd && pd.AccessorList is not null && pd.AccessorList.Accessors.All(acc => acc.Body is null && acc.ExpressionBody is null) || a is ParameterListSyntax pl && pl.Parent is RecordDeclarationSyntax || a is BaseListSyntax) == true) continue;
+                if (t.Parent?.AncestorsAndSelf().Any(a => a is UsingDirectiveSyntax or AttributeListSyntax or FieldDeclarationSyntax or BaseListSyntax
+                        || a is PropertyDeclarationSyntax pd && pd.AccessorList is not null && pd.AccessorList.Accessors.All(acc => acc.Body is null && acc.ExpressionBody is null)
+                        || a is ParameterListSyntax pl && pl.Parent is RecordDeclarationSyntax
+                        || a is ConstructorDeclarationSyntax cd && (cd.Body is null || cd.Body.Statements.All(st => st is ExpressionStatementSyntax { Expression: AssignmentExpressionSyntax or InvocationExpressionSyntax { Expression: MemberAccessExpressionSyntax { Name.Identifier.Text: "ThrowIfNull" or "ThrowIfNullOrEmpty" or "ThrowIfNullOrWhiteSpace" } } }))) == true) continue;
                 if (t.Parent is BaseNamespaceDeclarationSyntax || t.Parent is NameSyntax && t.Parent.Parent is BaseNamespaceDeclarationSyntax) continue;
                 toks.Add(new Tok(t.Text, Cs.Line(t), rel));
             }
@@ -226,7 +229,7 @@ public static class CodeHealth
                 var merged = new List<(string file, int start, int end, string other, int tokens)>();
                 foreach (var r in g.OrderBy(r => r.start))
                 {
-                    if (merged.Count > 0 && r.start <= merged[^1].end + 1) { var m = merged[^1]; merged[^1] = (m.file, m.start, Math.Max(m.end, r.end), m.other, Math.Max(m.tokens, r.tokens)); }
+                    if (merged.Count > 0 && r.start <= merged[^1].end + 3) { var m = merged[^1]; merged[^1] = (m.file, m.start, Math.Max(m.end, r.end), m.other, m.tokens + r.tokens); }
                     else merged.Add(r);
                 }
                 return merged;
@@ -235,7 +238,7 @@ public static class CodeHealth
         var totalTokens = streams.Sum(s => s.Count);
         var dupTokens = covered.Sum(c => c.Count(x => x));
         var share = totalTokens == 0 ? 0 : (double)dupTokens / totalTokens;
-        ctx.Measure("D4", 10 * Math.Max(0, 1 - share * 10), note: $"{dupTokens} of {totalTokens} tokens ({share:P1}) sit in {regions.Count} cloned regions (≥{MinClone} tokens, ≥{MinLines} lines)");
+        ctx.Measure("D4", 10 * Math.Max(0, 1 - share * 4), note: $"{dupTokens} of {totalTokens} tokens ({share:P1}) sit in {regions.Count} cloned regions (≥{MinClone} tokens, ≥{MinLines} lines)");
     }
 
     // ---------- D17 / GD1 / IC1 ----------
@@ -246,6 +249,7 @@ public static class CodeHealth
     private static void Debt(ScanContext ctx)
     {
         var defined = ctx.Repo.Projects.SelectMany(p => p.DefineConstants).ToHashSet(StringComparer.Ordinal);
+        var obsoleteUses = new Dictionary<string, (string file, int line, string name, List<string> callers)>(StringComparer.Ordinal);
         foreach (var (p, tree) in ctx.Workspace.ProductionTrees)
         {
             var rel = ctx.Workspace.RelPath(tree.FilePath);
@@ -345,7 +349,7 @@ public static class CodeHealth
                 if (members.Count >= 3 && members.Count(mm => mm.DescendantNodes().Any(n => n is ThrowStatementSyntax or ThrowExpressionSyntax) && mm.ToString().Contains("NotImplementedException")) * 2 > members.Count)
                 { var loc = ctx.Loc(t); ctx.Add(new Finding("incomplete-implementation", "IC1", $"{t.Identifier.Text} is a skeleton: most of its members are not-implemented holes", loc.File, loc.Line, loc.Line, 1)); }
             }
-            // obsolete symbols still used
+            // obsolete symbols still used: reported once, at the [Obsolete] declaration, naming the callers
             foreach (var node in root.DescendantNodes().Where(n => n is InvocationExpressionSyntax or ObjectCreationExpressionSyntax or MemberAccessExpressionSyntax or IdentifierNameSyntax))
             {
                 if (node is IdentifierNameSyntax && node.Parent is MemberAccessExpressionSyntax or InvocationExpressionSyntax) continue;
@@ -356,7 +360,12 @@ public static class CodeHealth
                 if (!IsObsolete(target) && !(sym is IMethodSymbol ms && IsObsolete(ms))) continue;
                 var enclosing = node.Ancestors().OfType<MemberDeclarationSyntax>().FirstOrDefault();
                 if (enclosing is not null && (Cs.HasAttribute(enclosing.AttributeLists, "Obsolete") || enclosing.Ancestors().OfType<TypeDeclarationSyntax>().Any(td => Cs.HasAttribute(td.AttributeLists, "Obsolete")))) continue;
-                ctx.Add(new Finding("obsolete-symbol-still-used", "D17", $"{target.Name} is marked [Obsolete] by this codebase and still used here", rel, Cs.Line(node), null, 1));
+                var declLoc = target.Locations.FirstOrDefault(l => l.IsInSource);
+                if (declLoc is null) continue;
+                var declFile = ctx.Workspace.RelPath(declLoc.SourceTree!.FilePath); var declLine = declLoc.GetLineSpan().StartLinePosition.Line + 1;
+                var key = $"{declFile}:{declLine}:{target.Name}";
+                if (!obsoleteUses.TryGetValue(key, out var uses)) obsoleteUses[key] = uses = (declFile, declLine, target.Name, new List<string>());
+                uses.callers.Add($"{Path.GetFileName(rel)}:{Cs.Line(node)}");
             }
             // unused private members (project-wide name search; written-but-never-read fields included, lifetime-keeping fields excluded)
             foreach (var t in root.DescendantNodes().OfType<TypeDeclarationSyntax>())
@@ -391,16 +400,22 @@ public static class CodeHealth
                 }
             }
         }
-        // project-level suppressions
-        foreach (var p in ctx.Repo.Projects.Where(p => p.IsProduction))
+        foreach (var (file, line, name, callers) in obsoleteUses.Values.OrderBy(u => u.file, StringComparer.Ordinal).ThenBy(u => u.line))
+            ctx.Add(new Finding("obsolete-symbol-still-used", "D17", $"{name} is marked [Obsolete] by this codebase and still used {callers.Count} time(s): {string.Join(", ", callers.Take(5))}", file, line, line, Math.Min(2, 0.5 + callers.Count * 0.5)));
+        // project-level suppressions: reported once, at the file that declares them, and only when no comment beside them says why
+        var declaring = ctx.Repo.Files.Where(f => f.EndsWith(".csproj") || f.EndsWith(".props")).Where(f => ctx.Repo.Projects.Any(p => p.IsProduction && (p.Path == f || f.EndsWith("Directory.Build.props"))));
+        foreach (var f in declaring.Distinct().OrderBy(x => x, StringComparer.Ordinal))
         {
-            var text = ctx.Repo.Text(p.Path);
-            foreach (var (prop, codes) in new[] { ("NoWarn", p.NoWarn), ("WarningsNotAsErrors", p.WarningsNotAsErrors) })
+            var text = ctx.Repo.Text(f); var lines = text.Split('\n');
+            for (var i = 0; i < lines.Length; i++)
             {
-                var specific = codes.Where(c => Regex.IsMatch(c, @"^(CS|CA|IDE|SA|S|NU|MA|RS|xUnit|NUnit)\w*\d+$", RegexOptions.IgnoreCase) && c is not ("CS1591" or "NU1603" or "NU1605" or "NU1701")).ToList();
+                var m = Regex.Match(lines[i], @"<(NoWarn|WarningsNotAsErrors)>([^<]*)</");
+                if (!m.Success) continue;
+                var specific = m.Groups[2].Value.Split(new[] { ';', ',' }, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).Where(c => Regex.IsMatch(c, @"^(CS|CA|IDE|SA|S|NU|MA|RS|xUnit|NUnit)\w*\d+$", RegexOptions.IgnoreCase) && c is not ("CS1591" or "NU1603" or "NU1605" or "NU1701")).ToList();
                 if (specific.Count == 0) continue;
-                var line = LineOf(text, "<" + prop);
-                ctx.Add(new Finding("suppressed-diagnostic", "D17", $"<{prop}> demotes {string.Join(", ", specific)} project-wide, with no reason recorded", p.Path, line, line, 1));
+                var justified = Enumerable.Range(Math.Max(0, i - 3), 3).Any(j => lines[j].Contains("<!--")) || lines[i].Contains("<!--");
+                if (justified) continue;
+                ctx.Add(new Finding("suppressed-diagnostic", "D17", $"<{m.Groups[1].Value}> demotes {string.Join(", ", specific)} build-wide, with no reason recorded", f, i + 1, i + 1, 1));
             }
         }
         var d17 = ctx.FindingsFor("D17").ToList();
@@ -409,7 +424,7 @@ public static class CodeHealth
         ctx.Measure("IC1", Shape.FromFindings(ctx.FindingsFor("IC1").Concat(ctx.FindingsFor("GD1")).Concat(d17.Where(f => f.RuleId == "unreachable-code")), ctx.ProductionKloc), note: "stubs, constant-returning members, skeleton types and dead branches");
     }
 
-    private static bool IsObsolete(ISymbol s) => s.GetAttributes().Any(a => a.AttributeClass?.Name == "ObsoleteAttribute");
+    private static bool IsObsolete(ISymbol s) => s.GetAttributes().Any(a => a.AttributeClass?.Name is "ObsoleteAttribute" or "Obsolete");
     private static string Norm(SyntaxNode n) => Regex.Replace(n.ToString(), @"\s+", "");
     private static string Trunc(string s, int n) => s.Length <= n ? s : s[..n] + "…";
     private static int LineOffset(SyntaxTrivia c, string line) { var idx = 0; foreach (var l in Cs.CommentLines(c)) { if (l == line) return idx; idx++; } return 0; }
@@ -422,7 +437,7 @@ public static class CodeHealth
     };
 
     // ---------- X1 / X2 / PF3 ----------
-    private static readonly Regex IoReceiver = new("Http|Stream|Reader|Writer|Db|Context|Client|Connection|Command|Socket|File|Channel|Bus|Queue|Repository|Store|Cache", RegexOptions.Compiled);
+    private static readonly Regex IoReceiver = new("Http|Stream|Reader|Writer|Db|Context|Client|Connection|Command|Socket|File|Channel|Bus|Queue|Repository|Store|Cache", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
     private static void Async(ScanContext ctx)
     {
@@ -453,7 +468,17 @@ public static class CodeHealth
                             var awaitNodes = md.Body.DescendantNodes(n => n is not AnonymousFunctionExpressionSyntax and not LocalFunctionStatementSyntax).OfType<AwaitExpressionSyntax>().ToList();
                             if (awaitNodes.Count == 0) break;
                             asyncMethods++;
-                            var hasToken = md.ParameterList.Parameters.Any(pp => Cs.Simple(pp.Type) == "CancellationToken") || md.Modifiers.Any(SyntaxKind.OverrideKeyword) || md.ExplicitInterfaceSpecifier is not null;
+                            var tokenParam = md.ParameterList.Parameters.FirstOrDefault(pp => Cs.Simple(pp.Type) == "CancellationToken");
+                            var hasToken = tokenParam is not null || md.Modifiers.Any(SyntaxKind.OverrideKeyword) || md.ExplicitInterfaceSpecifier is not null;
+                            if (tokenParam is not null)
+                            {
+                                // accepted but not forwarded: an awaited I/O call with no token argument while one is in hand
+                                var tokenName = tokenParam.Identifier.Text;
+                                var dropped = awaitNodes.Select(a => a.Expression is InvocationExpressionSyntax ca && Cs.MemberName(ca.Expression) == "ConfigureAwait" ? (ca.Expression as MemberAccessExpressionSyntax)?.Expression : a.Expression).OfType<InvocationExpressionSyntax>()
+                                    .FirstOrDefault(i => Cs.MemberName(i.Expression).EndsWith("Async", StringComparison.Ordinal) && IoReceiver.IsMatch(ReceiverTypeName(model, i)) && !i.ArgumentList.Arguments.Any(ar => ar.ToString().Contains(tokenName) || ar.ToString().EndsWith("Token") || ar.ToString().Contains("CancellationToken")) && AcceptsToken(model, i));
+                                if (dropped is not null) { var loc = ctx.Loc(md.Identifier); ctx.Add(new Finding("missing-cancellation-propagation", "X2", $"{Cs.TypeName(md)}.{md.Identifier.Text} accepts {tokenName} but does not pass it to {Trunc(dropped.Expression.ToString(), 50)}: an aborted caller keeps the work running", loc.File, loc.Line, loc.Line, 1)); }
+                                else if (md.Identifier.Text == "ExecuteAsync" && !md.Body.ToString().Contains(tokenName) ) { var loc = ctx.Loc(md.Identifier); ctx.Add(new Finding("missing-cancellation-propagation", "X2", $"{Cs.TypeName(md)}.ExecuteAsync never reads its {tokenName}: the host cannot stop it gracefully", loc.File, loc.Line, loc.Line, 1)); }
+                            }
                             if (hasToken) withToken++;
                             else
                             {
@@ -493,6 +518,17 @@ public static class CodeHealth
         return Cs.LooksAsyncCall(e) || e.ToString().Contains("Task") ;
     }
 
+    /// <summary>Does the called method (or an overload of it) take a CancellationToken? Unresolved methods are assumed to.</summary>
+    private static bool AcceptsToken(SemanticModel model, InvocationExpressionSyntax inv)
+    {
+        if (Cs.SymbolOf(model, inv.Expression) is not IMethodSymbol m || m.ContainingType is null || m.ContainingType.TypeKind == TypeKind.Error) return !Regex.IsMatch(inv.Expression.ToString(), @"\b(output|writer|console|Console|stdout|textWriter)\b", RegexOptions.IgnoreCase);
+        var target = m.ReducedFrom ?? m.OriginalDefinition;
+        var candidates = target.ContainingType.GetMembers(target.Name).OfType<IMethodSymbol>();
+        // the SAME call with a trailing CancellationToken must exist: every other parameter identical in type
+        return candidates.Any(o => o.Parameters.Length == target.Parameters.Length + 1 && o.Parameters[^1].Type.Name == "CancellationToken"
+            && o.Parameters.Take(target.Parameters.Length).Select(x => x.Type.ToDisplayString()).SequenceEqual(target.Parameters.Select(x => x.Type.ToDisplayString())));
+    }
+
     private static string ReceiverTypeName(SemanticModel model, InvocationExpressionSyntax inv)
     {
         if (inv.Expression is MemberAccessExpressionSyntax ma)
@@ -516,7 +552,8 @@ public static class CodeHealth
                 var typeName = Cs.Simple(c.Declaration?.Type);
                 var broad = c.Declaration is null || typeName is "Exception" or "SystemException" or "AggregateException";
                 var hasComment = c.Block.DescendantTrivia().Any(Cs.IsComment);
-                if (stmts.Count == 0 && (broad || !hasComment))
+                var cancellation = typeName is "OperationCanceledException" or "TaskCanceledException";   // swallowing a cancellation on shutdown is the idiom
+                if (stmts.Count == 0 && !cancellation && (broad || !hasComment))
                     ctx.Add(new Finding("empty-catch-block", "X3", $"empty catch{(c.Declaration is null ? "" : $" ({typeName})")} swallows the exception{(broad ? "" : " without saying why")}", rel, Cs.Line(c), null, broad ? 1 : 0.5));
                 if (stmts.Count == 1 && stmts[0] is ThrowStatementSyntax t0 && t0.Expression is null && c.Filter is null)
                     ctx.Add(new Finding("pointless-catch-rethrow", "X3", $"catch{(c.Declaration is null ? "" : $" ({typeName})")} only rethrows: the clause does nothing", rel, Cs.Line(c), null, 0.5));
@@ -587,8 +624,7 @@ public static class CodeHealth
         foreach (var p in prod)
         {
             if (p.Nullable) { enabled++; continue; }
-            var line = LineOf(ctx.Repo.Text(p.Path), "<Nullable");
-            ctx.Add(new Finding("nullable-analysis-disabled", "X5", $"{p.Name} does not enable nullable reference types", p.Path, line, line, 2));
+            ctx.Add(new Finding("nullable-analysis-disabled", "X5", $"{p.Name} ({p.Path}) does not enable nullable reference types while the analysis is a project-wide switch", null, null, null, 2));
         }
         int suppressions = 0;
         foreach (var (p, tree) in ctx.Workspace.ProductionTrees)

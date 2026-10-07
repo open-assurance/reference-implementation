@@ -16,6 +16,8 @@ public sealed class ProjectInfo
     public List<string> TargetFrameworks { get; init; } = new();
     public string? OutputType { get; init; }
     public bool Nullable { get; init; }
+    public bool ImplicitUsings { get; init; }
+    public List<string> ExtraUsings { get; init; } = new();
     public bool IsTestProject { get; init; }
     public bool IsPackable { get; init; }
     public string? Version { get; init; }
@@ -196,6 +198,8 @@ public sealed class Repository
                 Sdk = doc.Root.Attribute("Sdk")?.Value ?? "Microsoft.NET.Sdk",
                 TargetFrameworks = tfms, OutputType = Prop("OutputType"),
                 Nullable = string.Equals(Prop("Nullable"), "enable", StringComparison.OrdinalIgnoreCase),
+                ImplicitUsings = Prop("ImplicitUsings") is { } iu && (iu.Equals("enable", StringComparison.OrdinalIgnoreCase) || iu.Equals("true", StringComparison.OrdinalIgnoreCase)),
+                ExtraUsings = all.SelectMany(x => x.Descendants().Where(e => e.Name.LocalName == "Using" && e.Attribute("Include") is not null && e.Attribute("Remove") is null)).Select(e => e.Attribute("Include")!.Value.Trim()).Where(u => u.Length > 0 && !u.StartsWith("$")).ToList(),
                 IsTestProject = isTest,
                 IsPackable = string.Equals(Prop("IsPackable"), "true", StringComparison.OrdinalIgnoreCase) || string.Equals(Prop("GeneratePackageOnBuild"), "true", StringComparison.OrdinalIgnoreCase) || Prop("PackageId") is not null,
                 Version = Prop("Version") ?? Prop("VersionPrefix"),

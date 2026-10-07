@@ -27,6 +27,8 @@ public sealed class ScanContext
     public List<Measurement> Measurements { get; } = new();
     public List<NotMeasured> NotMeasured { get; } = new();
     public Dictionary<string, string> Facts { get; } = new(StringComparer.Ordinal);   // descriptive, never scored
+    private CodeGraph? _graph;
+    public CodeGraph Graph => _graph ??= CodeGraph.Build(Workspace);
 
     public void Add(Finding f) => Findings.Add(f);
     public void Measure(string id, double score, double confidence = 1.0, double coverage = 1.0, bool advisory = false, string? note = null) =>
@@ -80,6 +82,16 @@ public static class Rules
     public sealed record Rule(string Concept, string Dimension, string[] AlsoDimensions, string Title, string? Cwe = null)
     {
         public string[] AllDimensions => new[] { Dimension }.Concat(AlsoDimensions).Distinct().ToArray();
+        /// <summary>Sibling concepts one scanner may legitimately confuse (CONTRACT.md 1.1 families); symmetric, so it cannot flatter the engine.</summary>
+        public string? Family => Concept switch
+        {
+            "hardcoded-credential" or "hardcoded-password" or "hardcoded-cryptographic-key" => "hardcoded-secret",
+            "weak-hash-algorithm" or "insufficient-password-hashing" => "weak-password-hashing",
+            "insecure-deserialization" or "code-injection" => "untrusted-data-executed",
+            "high-cyclomatic-complexity" or "high-cognitive-complexity" => "complexity",
+            "not-implemented-placeholder" or "incomplete-implementation" => "incomplete",
+            _ => null,
+        };
     }
 
     private static Rule R(string concept, string dim, string title, string? cwe = null, params string[] also) => new(concept, dim, also, title, cwe);
@@ -291,6 +303,17 @@ public static class Rules
         R("modal-focus-not-managed", "AC4", "Modal dialog does not manage focus"),
         R("autoplay-media-without-control", "AC1", "Media plays automatically with no way to stop it"),
         R("accessibility-checks-in-ci", "AC7", "Accessibility checks enforced"),
+    };
+
+    /// <summary>Concepts whose findings describe an absent or partial posture rather than a located defect.</summary>
+    public static readonly HashSet<string> PostureConcepts = new(StringComparer.Ordinal)
+    {
+        "readme-quality", "architecture-documentation", "folder-structure", "solution-structure", "ci-build-and-test-pipeline", "observability", "security-tooling-in-ci",
+        "deployment-rollback-safety", "disaster-recovery-evidence", "release-hygiene", "library-api-versioning", "executable-specifications",
+        "architecture-style-fit", "test-pyramid-distribution", "domain-vs-controller-coverage", "build-provenance-and-signing", "vulnerability-disclosure-policy",
+        "network-egress-policy", "workload-syscall-confinement", "runtime-threat-detection-and-admission", "security-response-headers", "https-enforcement",
+        "inbound-input-validation", "data-encryption-controls", "authorization-enforcement", "audit-trail", "data-retention-policy", "data-subject-rights",
+        "accessibility-checks-in-ci", "benchmark-discipline", "allocation-awareness", "dependencies-not-locked", "business-logic-share",
     };
 
     private static readonly Dictionary<string, Rule> ByConcept = All.ToDictionary(r => r.Concept, StringComparer.Ordinal);

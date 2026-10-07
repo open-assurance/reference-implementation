@@ -55,6 +55,7 @@ public static class Output
             }),
         };
         foreach (var f in ctx.Facts.OrderBy(k => k.Key, StringComparer.Ordinal)) extra[f.Key] = JsonSerializer.SerializeToElement(f.Value);
+        extra["measurementNotes"] = JsonSerializer.SerializeToElement(new JsonObject(ctx.Measurements.Where(m => m.Note is not null).OrderBy(m => CatalogIndex(catalog, m.Id)).Select(m => KeyValuePair.Create<string, JsonNode?>(m.Id, m.Note))));
         bundle.Extra = extra;
         return bundle;
     }
@@ -131,8 +132,9 @@ public static class Output
         var concepts = new JsonObject();
         foreach (var r in Rules.All.OrderBy(r => r.Concept, StringComparer.Ordinal))
         {
-            var o = new JsonObject { ["rules"] = new JsonArray($"^{System.Text.RegularExpressions.Regex.Escape(r.Concept)}$"), ["dimensions"] = new JsonArray(r.AllDimensions.Select(d => (JsonNode)d).ToArray()) };
-            if (r.AlsoDimensions.Length > 0) o["scoreDimensions"] = new JsonArray(r.Dimension);
+            // one rule per concept, one dimension per rule: the dimension whose score the concept measures
+            var o = new JsonObject { ["rules"] = new JsonArray($"^{System.Text.RegularExpressions.Regex.Escape(r.Concept)}$"), ["dimensions"] = new JsonArray(r.Dimension) };
+            if (r.Family is not null) o["family"] = r.Family;
             concepts[r.Concept] = o;
         }
         var unmapped = new JsonArray();

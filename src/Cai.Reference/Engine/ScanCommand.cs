@@ -36,6 +36,10 @@ public static class ScanCommand
             Log($"{detector.Method.DeclaringType!.Name}.{detector.Method.Name}: {ctx.Findings.Count} findings, {ctx.Measurements.Count} measurements so far");
         }
         Coverage.FillNotMeasured(ctx);
+        // a posture dimension's "missing <item>" findings are only worth a reader's time when the posture is poor;
+        // otherwise the score carries the information and a located plant would have its own concrete finding
+        var scores = ctx.Measurements.ToDictionary(m => m.Id, m => m.Score, StringComparer.Ordinal);
+        ctx.Findings.RemoveAll(f => f.File is null && Rules.PostureConcepts.Contains(f.RuleId) && scores.TryGetValue(f.Dimension, out var sc) && sc >= 5);
 
         Directory.CreateDirectory(outDir);
         var evidence = Output.BuildEvidence(ctx, a.Opt("quality-bar"));
