@@ -1,0 +1,156 @@
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
+
+namespace Cai.Reference.Engine;
+
+/// <summary>One project's Roslyn compilation, built offline from source + the installed framework reference assemblies.</summary>
+public sealed class ProjectCompilation
+{
+    public required ProjectInfo Project { get; init; }
+    public required CSharpCompilation Compilation { get; init; }
+    public required IReadOnlyList<SyntaxTree> Trees { get; init; }
+    private readonly Dictionary<SyntaxTree, SemanticModel> _models = new();
+    public SemanticModel Model(SyntaxTree tree) { if (!_models.TryGetValue(tree, out var m)) _models[tree] = m = Compilation.GetSemanticModel(tree, ignoreAccessibility: true); return m; }
+    public bool IsGenerated(SyntaxTree tree) => GeneratedTrees.Contains(tree);
+    public HashSet<SyntaxTree> GeneratedTrees { get; init; } = new();
+}
+
+/// <summary>
+/// All projects compiled in dependency order. No package restore: third-party types stay unresolved (error types) and the
+/// detectors are written to read names syntactically where that happens. When a NuGet cache directory is supplied, the
+/// packages it already holds are referenced for extra fidelity.
+/// </summary>
+public sealed class Workspace
+{
+    public required Repository Repo { get; init; }
+    public required IReadOnlyList<ProjectCompilation> Projects { get; init; }
+    public required int ProductionLoc { get; init; }
+    public required int TestLoc { get; init; }
+    public required IReadOnlyList<string> ReferenceSets { get; init; }   // what framework refs were used (recorded in evidence)
+
+    public IEnumerable<ProjectCompilation> Production => Projects.Where(p => p.Project.IsProduction);
+    public IEnumerable<ProjectCompilation> Tests => Projects.Where(p => p.Project.Role == ProjectRole.Test);
+    public IEnumerable<(ProjectCompilation project, SyntaxTree tree)> ProductionTrees => Production.SelectMany(p => p.Trees.Where(t => !p.IsGenerated(t)).Select(t => (p, t)));
+    public IEnumerable<(ProjectCompilation project, SyntaxTree tree)> TestTrees => Tests.SelectMany(p => p.Trees.Where(t => !p.IsGenerated(t)).Select(t => (p, t)));
+    public IEnumerable<(ProjectCompilation project, SyntaxTree tree)> AllTrees => Projects.SelectMany(p => p.Trees.Where(t => !p.IsGenerated(t)).Select(t => (p, t)));
+
+    public string RelPath(string absolute) => System.IO.Path.GetRelativePath(Repo.Root, absolute).Replace('\\', '/');
+
+    public static Workspace Build(Repository repo, string? nugetPackagesDir)
+    {
+        var refSets = new List<string>();
+        var coreRefs = FrameworkRefs("Microsoft.NETCore.App", refSets);
+        var aspRefs = FrameworkRefs("Microsoft.AspNetCore.App", refSets);
+        var compiled = new Dictionary<string, ProjectCompilation>(StringComparer.Ordinal);
+        var ordered = Topo(repo.Projects);
+        int prodLoc = 0, testLoc = 0;
+        foreach (var p in ordered)
+        {
+            var symbols = new List<string> { "TRACE", "RELEASE" };
+            foreach (var tfm in p.TargetFrameworks) symbols.AddRange(TfmSymbols(tfm));
+            symbols.AddRange(p.DefineConstants);
+            var parse = new CSharpParseOptions(LanguageVersion.Preview, preprocessorSymbols: symbols.Distinct());
+            var trees = new List<SyntaxTree>(); var generated = new HashSet<SyntaxTree>();
+            foreach (var f in p.SourceFiles.OrderBy(x => x, StringComparer.Ordinal))
+            {
+                var text = repo.Text(f);
+                var tree = CSharpSyntaxTree.ParseText(text, parse, path: repo.Abs(f));
+                trees.Add(tree);
+                var gen = Repository.IsGeneratedPath(f) || Repository.IsGeneratedText(text) || tree.GetRoot().DescendantNodes().OfType<AttributeSyntax>().Any(a => a.Name.ToString().Contains("GeneratedCode"));
+                if (gen) generated.Add(tree);
+                else { var loc = CountLoc(tree); if (p.IsProduction) prodLoc += loc; else testLoc += loc; }
+            }
+            var refs = new List<MetadataReference>(coreRefs);
+            var wantsAsp = p.Sdk.Contains("Web", StringComparison.OrdinalIgnoreCase) || p.Sdk.Contains("Razor", StringComparison.OrdinalIgnoreCase) || p.Sdk.Contains("Blazor", StringComparison.OrdinalIgnoreCase)
+                || p.HasPackage("Microsoft.AspNetCore") || p.Packages.Any(x => x.id.Contains("AspNetCore", StringComparison.OrdinalIgnoreCase));
+            if (wantsAsp || p.ProjectReferences.Any(r => compiled.TryGetValue(r, out var c) && c.Compilation.ReferencedAssemblyNames.Any(a => a.Name.StartsWith("Microsoft.AspNetCore")))) refs.AddRange(aspRefs);
+            foreach (var r in p.ProjectReferences) if (compiled.TryGetValue(r, out var dep)) refs.Add(dep.Compilation.ToMetadataReference());
+            if (nugetPackagesDir is not null) refs.AddRange(PackageRefs(p, repo, nugetPackagesDir));
+            var options = new CSharpCompilationOptions(p.OutputType?.Equals("Exe", StringComparison.OrdinalIgnoreCase) == true ? OutputKind.ConsoleApplication : OutputKind.DynamicallyLinkedLibrary,
+                nullableContextOptions: p.Nullable ? NullableContextOptions.Enable : NullableContextOptions.Disable, allowUnsafe: true, concurrentBuild: false);
+            var comp = CSharpCompilation.Create(p.Name, trees, refs, options);
+            compiled[p.Path] = new ProjectCompilation { Project = p, Compilation = comp, Trees = trees, GeneratedTrees = generated };
+        }
+        return new Workspace { Repo = repo, Projects = ordered.Select(p => compiled[p.Path]).ToList(), ProductionLoc = prodLoc, TestLoc = testLoc, ReferenceSets = refSets };
+    }
+
+    /// <summary>Lines that carry at least one token (blank and comment-only lines are not code).</summary>
+    public static int CountLoc(SyntaxTree tree)
+    {
+        var lines = new HashSet<int>();
+        foreach (var t in tree.GetRoot().DescendantTokens()) { if (t.IsKind(SyntaxKind.EndOfFileToken)) continue; var span = t.GetLocation().GetLineSpan(); for (var l = span.StartLinePosition.Line; l <= span.EndLinePosition.Line; l++) lines.Add(l); }
+        return lines.Count;
+    }
+
+    private static IEnumerable<string> TfmSymbols(string tfm)
+    {
+        var m = System.Text.RegularExpressions.Regex.Match(tfm, @"^net(\d+)\.(\d+)");
+        if (m.Success)
+        {
+            var major = int.Parse(m.Groups[1].Value); var minor = int.Parse(m.Groups[2].Value);
+            yield return "NET"; yield return "NETCOREAPP"; yield return $"NET{major}_{minor}";
+            for (var v = 5; v <= major; v++) yield return $"NET{v}_0_OR_GREATER";
+            yield return "NETCOREAPP3_1_OR_GREATER"; yield return "NETCOREAPP3_0_OR_GREATER";
+        }
+        else if (tfm.StartsWith("netstandard")) yield return "NETSTANDARD";
+        else if (tfm.StartsWith("netcoreapp")) { yield return "NETCOREAPP"; }
+        else if (tfm.StartsWith("net4")) yield return "NETFRAMEWORK";
+    }
+
+    private static List<ProjectInfo> Topo(IReadOnlyList<ProjectInfo> projects)
+    {
+        var byPath = projects.ToDictionary(p => p.Path, StringComparer.Ordinal);
+        var result = new List<ProjectInfo>(); var state = new Dictionary<string, int>(StringComparer.Ordinal);
+        void Visit(ProjectInfo p)
+        {
+            if (state.TryGetValue(p.Path, out var s)) { return; }
+            state[p.Path] = 1;
+            foreach (var r in p.ProjectReferences.OrderBy(x => x, StringComparer.Ordinal)) if (byPath.TryGetValue(r, out var dep) && !state.ContainsKey(dep.Path)) Visit(dep);
+            state[p.Path] = 2; result.Add(p);
+        }
+        foreach (var p in projects.OrderBy(p => p.Path, StringComparer.Ordinal)) Visit(p);
+        return result;
+    }
+
+    private static List<MetadataReference> FrameworkRefs(string framework, List<string> refSets)
+    {
+        var dotnetRoot = System.IO.Path.GetDirectoryName(System.IO.Path.GetDirectoryName(System.IO.Path.GetDirectoryName(typeof(object).Assembly.Location)!)!)!; // …/shared/Microsoft.NETCore.App/x → dotnet root
+        var version = System.IO.Path.GetFileName(System.IO.Path.GetDirectoryName(typeof(object).Assembly.Location)!);
+        var major = version.Split('.')[0];
+        // prefer the reference pack (what the compiler itself targets); fall back to the shared runtime implementation assemblies
+        var packs = System.IO.Path.Combine(dotnetRoot, "packs", framework + ".Ref");
+        string? dir = null;
+        if (Directory.Exists(packs))
+        {
+            var v = Directory.GetDirectories(packs).Select(System.IO.Path.GetFileName).Where(n => n!.StartsWith(major + ".")).OrderBy(n => n, StringComparer.Ordinal).LastOrDefault();
+            if (v is not null) { var refDir = System.IO.Path.Combine(packs, v, "ref"); dir = Directory.Exists(refDir) ? Directory.GetDirectories(refDir).OrderBy(x => x).LastOrDefault() : null; if (dir is not null) refSets.Add($"{framework}.Ref {v}"); }
+        }
+        if (dir is null)
+        {
+            var shared = System.IO.Path.Combine(dotnetRoot, "shared", framework);
+            if (!Directory.Exists(shared)) return new List<MetadataReference>();
+            dir = Directory.GetDirectories(shared).OrderBy(x => x, StringComparer.Ordinal).Last(); refSets.Add($"{framework} {System.IO.Path.GetFileName(dir)} (runtime)");
+        }
+        return Directory.GetFiles(dir, "*.dll").OrderBy(f => f, StringComparer.Ordinal).Where(f => !System.IO.Path.GetFileName(f).StartsWith("mscorlib") || true)
+            .Select(f => (MetadataReference)MetadataReference.CreateFromFile(f)).ToList();
+    }
+
+    private static IEnumerable<MetadataReference> PackageRefs(ProjectInfo p, Repository repo, string cache)
+    {
+        var tfm = p.TargetFrameworks.FirstOrDefault() ?? "net10.0";
+        var major = int.TryParse(System.Text.RegularExpressions.Regex.Match(tfm, @"net(\d+)").Groups[1].Value, out var m) ? m : 10;
+        foreach (var (id, version) in p.Packages)
+        {
+            if (version is null) continue;
+            var dir = System.IO.Path.Combine(cache, id.ToLowerInvariant(), version.ToLowerInvariant(), "lib");
+            if (!Directory.Exists(dir)) continue;
+            var candidates = Directory.GetDirectories(dir).Select(System.IO.Path.GetFileName).Select(n => n!).ToList();
+            string? pick = null;
+            for (var v = major; v >= 5 && pick is null; v--) pick = candidates.FirstOrDefault(c => c == $"net{v}.0");
+            pick ??= candidates.FirstOrDefault(c => c == "netstandard2.1") ?? candidates.FirstOrDefault(c => c == "netstandard2.0") ?? candidates.FirstOrDefault(c => c.StartsWith("netcoreapp"));
+            if (pick is null) continue;
+            foreach (var dll in Directory.GetFiles(System.IO.Path.Combine(dir, pick), "*.dll").OrderBy(f => f, StringComparer.Ordinal)) yield return MetadataReference.CreateFromFile(dll);
+        }
+    }
+}

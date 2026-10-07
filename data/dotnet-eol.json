@@ -113,7 +113,7 @@
    "releaseLabel": "Core __RELEASE_CYCLE__"
   }
  ],
- "fetchedAt": "2026-10-07T19:29:16Z",
+ "fetchedAt": "2026-10-07T19:32:40Z",
  "sha256": "b7166337fbdef0b2f800398624cbbc54046645358ecd7de6f79f60d9943a7458",
  "source": "https://endoflife.date/api/dotnet.json"
 }

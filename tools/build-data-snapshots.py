@@ -27,11 +27,10 @@ with zipfile.ZipFile(io.BytesIO(raw)) as z:
         for a in d.get('affected', []) or []:
             pkg = (a.get('package') or {})
             if pkg.get('ecosystem') != 'NuGet': continue
-            affected.append({
-                'package': pkg.get('name'),
-                'ranges': [{'type': r.get('type'), 'events': r.get('events', [])} for r in a.get('ranges', []) or []],
-                'versions': a.get('versions', []) or [],
-            })
+            ranges = [{'type': r.get('type'), 'events': r.get('events', [])} for r in a.get('ranges', []) or []]
+            # explicit version lists quadruple the snapshot and add nothing where ECOSYSTEM ranges exist; they are
+            # kept only for the (mostly MAL-*) entries that publish no range at all.
+            affected.append({'package': pkg.get('name'), 'ranges': ranges, 'versions': [] if ranges else (a.get('versions', []) or [])})
         if not affected: continue
         advisories.append({'id': d['id'], 'aliases': d.get('aliases', []) or [], 'summary': d.get('summary', ''),
                            'severity': dbsev, 'cvss': sev, 'withdrawn': d.get('withdrawn'), 'affected': affected})
