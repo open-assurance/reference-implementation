@@ -1,0 +1,171 @@
+{
+ "source": "oracle: cai score (published CLI), 2026-10-07",
+ "evidence": {
+  "rubricVersion": "rubric-2026.08.15",
+  "commit": "3f9a1c2",
+  "qualityBar": "production",
+  "analyzableProjects": 3,
+  "productionLoc": 1500,
+  "rebuildCost": {
+   "low": 118000,
+   "high": 204000,
+   "currency": "EUR"
+  },
+  "busFactor": "2 of 11 devs",
+  "dimensions": [
+   {
+    "id": "D1",
+    "category": "code-quality",
+    "score": 7.5,
+    "confidence": 0.95
+   },
+   {
+    "id": "D3",
+    "category": "code-quality",
+    "score": 8.2,
+    "confidence": 0.95
+   },
+   {
+    "id": "D8",
+    "category": "code-quality",
+    "score": 6.4,
+    "confidence": 0.9
+   },
+   {
+    "id": "D17",
+    "category": "explicit-debt",
+    "score": 8.8,
+    "confidence": 0.9
+   },
+   {
+    "id": "D5",
+    "category": "architecture",
+    "score": 7.1,
+    "confidence": 0.95
+   },
+   {
+    "id": "D7",
+    "category": "architecture",
+    "score": 8.4,
+    "confidence": 0.9
+   },
+   {
+    "id": "D15",
+    "category": "git-mining",
+    "score": 6.0,
+    "confidence": 0.85
+   },
+   {
+    "id": "M1",
+    "category": "docs",
+    "score": 7.2,
+    "confidence": 0.8
+   },
+   {
+    "id": "D9",
+    "category": "testing",
+    "score": 7.0,
+    "confidence": 0.85
+   },
+   {
+    "id": "D12",
+    "category": "dependencies",
+    "score": 8.1,
+    "confidence": 0.9
+   },
+   {
+    "id": "D30",
+    "category": "security",
+    "score": 7.6,
+    "confidence": 0.9
+   },
+   {
+    "id": "D28",
+    "category": "security-compliance",
+    "score": 5.5,
+    "confidence": 0.95
+   },
+   {
+    "id": "D29",
+    "category": "security-compliance",
+    "score": 8.9,
+    "confidence": 0.95
+   },
+   {
+    "id": "D21",
+    "category": "code-quality",
+    "score": 7.0,
+    "confidence": 0.7,
+    "advisory": true
+   }
+  ],
+  "metaDimensions": [
+   {
+    "id": "AC1",
+    "lens": "accessibility",
+    "score": 8.5
+   },
+   {
+    "id": "PF1",
+    "lens": "performance",
+    "score": 8.0
+   }
+  ],
+  "headlineScore": 70.3
+ },
+ "expected": {
+  "cai": 70.3,
+  "band": "Strong",
+  "lenses": {
+   "maturity": {
+    "score": 65.1,
+    "band": "Adequate",
+    "gated": false,
+    "items": 2,
+    "weight": 0.457
+   },
+   "securityCompliance": {
+    "score": 72.0,
+    "band": "Strong",
+    "gated": false,
+    "items": 1,
+    "weight": 0.251
+   },
+   "productionReadiness": {
+    "score": 74.6,
+    "band": "Strong",
+    "gated": false,
+    "items": 3,
+    "weight": 0.138
+   },
+   "architecture": {
+    "score": 77.3,
+    "band": "Strong",
+    "gated": false,
+    "items": 1,
+    "weight": 0.076
+   },
+   "codeHealth": {
+    "score": 79.9,
+    "band": "Strong",
+    "gated": false,
+    "items": 2,
+    "weight": 0.042
+   },
+   "performance": {
+    "score": 80.0,
+    "band": "Strong",
+    "gated": false,
+    "items": 1,
+    "weight": 0.023
+   },
+   "accessibility": {
+    "score": 85.0,
+    "band": "Strong",
+    "gated": false,
+    "items": 1,
+    "weight": 0.013
+   }
+  }
+ }
+}

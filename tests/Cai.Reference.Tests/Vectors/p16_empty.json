@@ -1,0 +1,13 @@
+{
+ "source": "oracle: cai score (published CLI), 2026-10-07",
+ "evidence": {
+  "rubricVersion": "rubric-2026.10.2",
+  "commit": "abc",
+  "analyzableProjects": 3,
+  "productionLoc": 5000,
+  "dimensions": [],
+  "metaDimensions": []
+ },
+ "expectedError": true,
+ "oracleMessage": "error: Evidence bundle carries no dimensions, meta-dimensions or lens scores. (Parameter 'bundle')"
+}

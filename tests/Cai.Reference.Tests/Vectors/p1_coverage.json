@@ -1,0 +1,38 @@
+{
+ "source": "oracle: cai score (published CLI), 2026-10-07",
+ "evidence": {
+  "rubricVersion": "rubric-2026.10.2",
+  "commit": "abc",
+  "analyzableProjects": 3,
+  "productionLoc": 5000,
+  "dimensions": [
+   {
+    "id": "D1",
+    "category": "code-quality",
+    "score": 8.0,
+    "confidence": 1.0,
+    "coverage": 0.5
+   },
+   {
+    "id": "D17",
+    "category": "explicit-debt",
+    "score": 8.0,
+    "confidence": 1.0
+   }
+  ],
+  "metaDimensions": []
+ },
+ "expected": {
+  "cai": 57.1,
+  "band": "Adequate",
+  "lenses": {
+   "codeHealth": {
+    "score": 57.1,
+    "band": "Adequate",
+    "gated": false,
+    "items": 2,
+    "weight": 1.0
+   }
+  }
+ }
+}

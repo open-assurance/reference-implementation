@@ -1,0 +1,145 @@
+{
+ "source": "oracle: cai score (published CLI), 2026-10-07",
+ "evidence": {
+  "rubricVersion": "rubric-2026.10.2",
+  "commit": "abc",
+  "analyzableProjects": 3,
+  "productionLoc": 5000,
+  "dimensions": [
+   {
+    "id": "D1",
+    "category": "code-quality",
+    "score": 6.5,
+    "confidence": 1.0
+   },
+   {
+    "id": "D28",
+    "category": "security-compliance",
+    "score": 6.5,
+    "confidence": 1.0
+   },
+   {
+    "id": "D15",
+    "category": "git-mining",
+    "score": 6.5,
+    "confidence": 1.0
+   },
+   {
+    "id": "D9",
+    "category": "testing",
+    "score": 6.5,
+    "confidence": 1.0
+   },
+   {
+    "id": "D5",
+    "category": "architecture",
+    "score": 6.5,
+    "confidence": 1.0
+   }
+  ],
+  "metaDimensions": [
+   {
+    "id": "AC1",
+    "lens": "accessibility",
+    "score": 6.5
+   },
+   {
+    "id": "PF3",
+    "lens": "performance",
+    "score": 6.5
+   },
+   {
+    "id": "DM1",
+    "lens": "domainModelling",
+    "score": 6.5
+   },
+   {
+    "id": "ED1",
+    "lens": "eventDriven",
+    "score": 6.5
+   },
+   {
+    "id": "ES1",
+    "lens": "eventSourcing",
+    "score": 6.5
+   }
+  ],
+  "qualityBar": "bogus"
+ },
+ "expected": {
+  "cai": 65.0,
+  "band": "Adequate",
+  "lenses": {
+   "codeHealth": {
+    "score": 65.0,
+    "band": "Adequate",
+    "gated": false,
+    "items": 1,
+    "weight": 0.451
+   },
+   "architecture": {
+    "score": 65.0,
+    "band": "Adequate",
+    "gated": false,
+    "items": 1,
+    "weight": 0.248
+   },
+   "maturity": {
+    "score": 65.0,
+    "band": "Adequate",
+    "gated": false,
+    "items": 1,
+    "weight": 0.136
+   },
+   "productionReadiness": {
+    "score": 65.0,
+    "band": "Adequate",
+    "gated": false,
+    "items": 1,
+    "weight": 0.075
+   },
+   "securityCompliance": {
+    "score": 65.0,
+    "band": "Adequate",
+    "gated": false,
+    "items": 1,
+    "weight": 0.041
+   },
+   "domainModelling": {
+    "score": 65.0,
+    "band": "Adequate",
+    "gated": false,
+    "items": 1,
+    "weight": 0.023
+   },
+   "eventDriven": {
+    "score": 65.0,
+    "band": "Adequate",
+    "gated": false,
+    "items": 1,
+    "weight": 0.012
+   },
+   "eventSourcing": {
+    "score": 65.0,
+    "band": "Adequate",
+    "gated": false,
+    "items": 1,
+    "weight": 0.007
+   },
+   "accessibility": {
+    "score": 65.0,
+    "band": "Adequate",
+    "gated": false,
+    "items": 1,
+    "weight": 0.004
+   },
+   "performance": {
+    "score": 65.0,
+    "band": "Adequate",
+    "gated": false,
+    "items": 1,
+    "weight": 0.002
+   }
+  }
+ }
+}

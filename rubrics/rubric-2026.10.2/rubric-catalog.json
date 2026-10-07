@@ -1,0 +1,1648 @@
+{
+  "rubricVersion": "rubric-2026.10.2",
+  "lenses": [
+    {
+      "key": "codeHealth",
+      "label": "Code Health"
+    },
+    {
+      "key": "architecture",
+      "label": "Architecture"
+    },
+    {
+      "key": "maturity",
+      "label": "Maturity"
+    },
+    {
+      "key": "productionReadiness",
+      "label": "Readiness"
+    },
+    {
+      "key": "securityCompliance",
+      "label": "Security"
+    },
+    {
+      "key": "domainModelling",
+      "label": "Domain Modelling"
+    },
+    {
+      "key": "eventDriven",
+      "label": "Event-Driven"
+    },
+    {
+      "key": "eventSourcing",
+      "label": "Event Sourcing"
+    },
+    {
+      "key": "accessibility",
+      "label": "Accessibility"
+    },
+    {
+      "key": "performance",
+      "label": "Performance"
+    }
+  ],
+  "dimensions": [
+    {
+      "id": "D1",
+      "name": "Cyclomatic Complexity",
+      "lens": "codeHealth",
+      "category": "code-quality",
+      "evaluator": "tool",
+      "whatItMeasures": "How tangled the control flow is \u2014 methods with many branches are hard to test and change.",
+      "family": "dimension",
+      "ceilingRung": "Prevented",
+      "scoringPolarity": "deduction"
+    },
+    {
+      "id": "D2",
+      "name": "Cognitive Complexity",
+      "lens": "codeHealth",
+      "category": "code-quality",
+      "evaluator": "tool",
+      "whatItMeasures": "How hard the code is for a person to follow, beyond raw branching.",
+      "family": "dimension",
+      "ceilingRung": "Prevented",
+      "scoringPolarity": "deduction"
+    },
+    {
+      "id": "D3",
+      "name": "God Classes",
+      "lens": "codeHealth",
+      "category": "code-quality",
+      "evaluator": "tool",
+      "whatItMeasures": "Over-large classes that try to do too much (\u0022god classes\u0022).",
+      "family": "dimension",
+      "ceilingRung": "Prevented",
+      "scoringPolarity": "deduction"
+    },
+    {
+      "id": "D4",
+      "name": "Code Duplication",
+      "lens": "codeHealth",
+      "category": "code-quality",
+      "evaluator": "tool",
+      "whatItMeasures": "Copy-pasted code that should be shared instead.",
+      "family": "dimension",
+      "ceilingRung": "Verified",
+      "scoringPolarity": "deduction"
+    },
+    {
+      "id": "D5",
+      "name": "Coupling",
+      "lens": "architecture",
+      "category": "architecture",
+      "evaluator": "tool",
+      "whatItMeasures": "Whether volatile projects sit underneath others that depend on them (so their churn ripples upward), and whether project dependencies form cycles. A widely-depended-on but stable shared/kernel project is healthy, not penalised.",
+      "family": "dimension",
+      "ceilingRung": "Prevented",
+      "scoringPolarity": "deduction"
+    },
+    {
+      "id": "D6",
+      "name": "Cohesion (LCOM4)",
+      "lens": "architecture",
+      "category": "architecture",
+      "evaluator": "tool",
+      "whatItMeasures": "Whether a class\u0027s methods are focused on a single responsibility.",
+      "family": "dimension",
+      "ceilingRung": "Verified",
+      "scoringPolarity": "deduction"
+    },
+    {
+      "id": "D7",
+      "name": "Architectural Integrity",
+      "lens": "architecture",
+      "category": "architecture",
+      "evaluator": "tool",
+      "whatItMeasures": "Whether the code respects its intended layering / architecture rules.",
+      "family": "dimension",
+      "ceilingRung": "Prevented",
+      "scoringPolarity": "deduction"
+    },
+    {
+      "id": "D8",
+      "name": "Code Coverage",
+      "lens": "productionReadiness",
+      "category": "testing",
+      "evaluator": "tool",
+      "whatItMeasures": "How much of the code is actually exercised by tests.",
+      "family": "dimension",
+      "ceilingRung": "Verified",
+      "scoringPolarity": "deduction"
+    },
+    {
+      "id": "D9",
+      "name": "Test Distribution",
+      "lens": "productionReadiness",
+      "category": "testing",
+      "evaluator": "tool",
+      "whatItMeasures": "Whether the test suite has a healthy mix of unit / integration / end-to-end tests.",
+      "family": "dimension",
+      "ceilingRung": "Documented",
+      "scoringPolarity": "deduction"
+    },
+    {
+      "id": "D10",
+      "name": "Test Quality",
+      "lens": "productionReadiness",
+      "category": "testing",
+      "evaluator": "tool",
+      "whatItMeasures": "Whether the tests truly assert behaviour rather than just running the code.",
+      "family": "dimension",
+      "ceilingRung": "Prevented",
+      "scoringPolarity": "deduction"
+    },
+    {
+      "id": "D11",
+      "name": "Test Reliability",
+      "lens": "productionReadiness",
+      "category": "testing",
+      "evaluator": "tool",
+      "whatItMeasures": "Whether the tests pass reliably, with no flakiness.",
+      "family": "dimension",
+      "ceilingRung": "Verified",
+      "scoringPolarity": "deduction"
+    },
+    {
+      "id": "D12",
+      "name": "Dependency Hygiene",
+      "lens": "productionReadiness",
+      "category": "dependencies",
+      "evaluator": "tool",
+      "whatItMeasures": "Whether dependencies are current, secure, and not bloated.",
+      "family": "dimension",
+      "ceilingRung": "Verified",
+      "scoringPolarity": "deduction"
+    },
+    {
+      "id": "D13",
+      "name": "Secret Scanning",
+      "lens": "productionReadiness",
+      "category": "security",
+      "evaluator": "tool",
+      "whatItMeasures": "Whether any secrets (keys, tokens, passwords) have leaked into the code.",
+      "family": "dimension",
+      "ceilingRung": "Prevented",
+      "scoringPolarity": "deduction"
+    },
+    {
+      "id": "D14",
+      "name": "License Compliance",
+      "lens": "productionReadiness",
+      "category": "security",
+      "evaluator": "tool",
+      "whatItMeasures": "Whether the licenses of third-party packages are compatible with your policy.",
+      "family": "dimension",
+      "ceilingRung": "Verified",
+      "scoringPolarity": "deduction"
+    },
+    {
+      "id": "D15",
+      "name": "Churn \u00D7 Complexity Hotspots",
+      "lens": "maturity",
+      "category": "git-mining",
+      "evaluator": "tool",
+      "whatItMeasures": "Files that change often and are also complex \u2014 the riskiest hotspots.",
+      "family": "dimension",
+      "ceilingRung": "Documented",
+      "scoringPolarity": "deduction"
+    },
+    {
+      "id": "D16",
+      "name": "Bus Factor",
+      "lens": "maturity",
+      "category": "git-mining",
+      "evaluator": "tool",
+      "whatItMeasures": "Whether knowledge is concentrated in too few people (the \u0022bus factor\u0022).",
+      "family": "dimension",
+      "ceilingRung": "Documented",
+      "scoringPolarity": "deduction"
+    },
+    {
+      "id": "D17",
+      "name": "Explicit Debt",
+      "lens": "codeHealth",
+      "category": "explicit-debt",
+      "evaluator": "tool",
+      "whatItMeasures": "Acknowledged debt left in the code \u2014 TODOs, dead code, suppressed warnings.",
+      "family": "dimension",
+      "ceilingRung": "Prevented",
+      "scoringPolarity": "deduction"
+    },
+    {
+      "id": "D18",
+      "name": "Solution Shape",
+      "lens": "codeHealth",
+      "category": "code-quality",
+      "evaluator": "tool",
+      "whatItMeasures": "Whether the solution is laid out in a sensible, conventional structure.",
+      "family": "dimension",
+      "ceilingRung": "Documented",
+      "scoringPolarity": "deduction"
+    },
+    {
+      "id": "D19",
+      "name": "Documentation Quality",
+      "lens": "maturity",
+      "category": "docs",
+      "evaluator": "llm",
+      "whatItMeasures": "Whether the project\u0027s documentation is clear, complete, and useful.",
+      "family": "dimension",
+      "ceilingRung": "Documented",
+      "scoringPolarity": "deduction"
+    },
+    {
+      "id": "D20",
+      "name": "ADR Quality",
+      "lens": "maturity",
+      "category": "docs",
+      "evaluator": "llm",
+      "whatItMeasures": "Whether architecture decisions are recorded well (context, decision, consequences).",
+      "family": "dimension",
+      "ceilingRung": "Documented",
+      "scoringPolarity": "deduction"
+    },
+    {
+      "id": "D21",
+      "name": "Naming Consistency",
+      "lens": "maturity",
+      "category": "docs",
+      "evaluator": "llm",
+      "whatItMeasures": "Whether names \u2014 types, methods, variables \u2014 are clear and consistent.",
+      "family": "dimension",
+      "ceilingRung": "Verified",
+      "scoringPolarity": "deduction"
+    },
+    {
+      "id": "D22",
+      "name": "Internal API Consistency",
+      "lens": "architecture",
+      "category": "architecture",
+      "evaluator": "llm",
+      "whatItMeasures": "Whether the internal API surface is consistent and coherent.",
+      "family": "dimension",
+      "ceilingRung": "Verified",
+      "scoringPolarity": "deduction"
+    },
+    {
+      "id": "D23",
+      "name": "Boundary Type-Coupling",
+      "lens": "architecture",
+      "category": "architecture",
+      "evaluator": "tool",
+      "whatItMeasures": "Whether domain types (IDs, enums, value objects) leak across bounded-context boundaries.",
+      "family": "dimension",
+      "ceilingRung": "Verified",
+      "scoringPolarity": "deduction"
+    },
+    {
+      "id": "D24",
+      "name": "Comment Value",
+      "lens": "maturity",
+      "category": "docs",
+      "evaluator": "llm",
+      "whatItMeasures": "Whether comments are worth it \u2014 explaining WHY (valuable) rather than WHAT (redundant).",
+      "family": "dimension",
+      "ceilingRung": "Documented",
+      "scoringPolarity": "deduction"
+    },
+    {
+      "id": "D25",
+      "name": "ADR Conformance",
+      "lens": "maturity",
+      "category": "docs",
+      "evaluator": "llm",
+      "whatItMeasures": "Whether the code actually follows the decisions recorded in the project\u0027s ADRs.",
+      "family": "dimension",
+      "ceilingRung": "Verified",
+      "scoringPolarity": "deduction"
+    },
+    {
+      "id": "D26",
+      "name": "Project Cohesion",
+      "lens": "architecture",
+      "category": "architecture",
+      "evaluator": "tool",
+      "whatItMeasures": "Whether each project is a focused, coherent unit rather than an oversized grab-bag.",
+      "family": "dimension",
+      "ceilingRung": "Documented",
+      "scoringPolarity": "deduction"
+    },
+    {
+      "id": "D27",
+      "name": "Navigability",
+      "lens": "architecture",
+      "category": "architecture",
+      "evaluator": "tool",
+      "whatItMeasures": "How far you must trace to follow a call \u2014 low indirection and co-located slices read easier.",
+      "family": "dimension",
+      "ceilingRung": "Documented",
+      "scoringPolarity": "deduction"
+    },
+    {
+      "id": "D28",
+      "name": "Secrets (history)",
+      "lens": "securityCompliance",
+      "category": "security-compliance",
+      "evaluator": "tool",
+      "whatItMeasures": "Whether any secrets were ever committed \u2014 scanned across the full git history, not just now.",
+      "family": "dimension",
+      "ceilingRung": "Documented",
+      "scoringPolarity": "deduction"
+    },
+    {
+      "id": "D29",
+      "name": "Static Analysis (SAST)",
+      "lens": "securityCompliance",
+      "category": "security-compliance",
+      "evaluator": "tool",
+      "whatItMeasures": "Real static-analysis (SAST) findings \u2014 likely security bugs in the code, any language.",
+      "family": "dimension",
+      "ceilingRung": "Documented",
+      "scoringPolarity": "deduction"
+    },
+    {
+      "id": "D30",
+      "name": "Dependency Vulnerabilities",
+      "lens": "securityCompliance",
+      "category": "security-compliance",
+      "evaluator": "tool",
+      "whatItMeasures": "Whether any dependency has a known published vulnerability (CVE), direct or transitive, in ANY ecosystem the repository declares \u2014 Dart pub, Elixir and Erlang via Hex, Go modules, Java and Kotlin via Maven/Gradle, JavaScript/npm, .NET/NuGet, PHP/Composer, Python/PyPI, RubyGems, Rust/Cargo and Swift.",
+      "family": "dimension",
+      "ceilingRung": "Documented",
+      "scoringPolarity": "deduction"
+    },
+    {
+      "id": "D31",
+      "name": "IaC \u0026 Container Security",
+      "lens": "securityCompliance",
+      "category": "security-compliance",
+      "evaluator": "tool",
+      "whatItMeasures": "Whether Dockerfiles / Terraform / Kubernetes config follow security best practices.",
+      "family": "dimension",
+      "ceilingRung": "Documented",
+      "scoringPolarity": "deduction"
+    },
+    {
+      "id": "D32",
+      "name": "Data Compliance (PII/GDPR)",
+      "lens": "securityCompliance",
+      "category": "security-compliance",
+      "evaluator": "tool",
+      "whatItMeasures": "Likely personal-data (PII / GDPR) handling concerns \u2014 logging or storing data without safeguards.",
+      "family": "dimension",
+      "ceilingRung": "Documented",
+      "scoringPolarity": "deduction"
+    },
+    {
+      "id": "D34",
+      "name": "Knowledge Freshness",
+      "lens": "maturity",
+      "category": "git-mining",
+      "evaluator": "tool",
+      "whatItMeasures": "Whether anyone still has living knowledge of each file, or it has been orphaned \u2014 last understood long ago by someone now gone quiet. The sibling of the bus factor: D16 asks who owns it, D34 asks whether anyone still knows it.",
+      "family": "dimension",
+      "ceilingRung": "Documented",
+      "scoringPolarity": "deduction"
+    },
+    {
+      "id": "D35",
+      "name": "Change Coupling",
+      "lens": "architecture",
+      "category": "architecture",
+      "evaluator": "tool",
+      "whatItMeasures": "Whether files that change together actually belong together \u2014 pairs that repeatedly co-change in git history despite having no explicit code dependency, surfacing the hidden/logical coupling (and boundaries in the wrong place) a static scan can\u0027t see.",
+      "family": "dimension",
+      "ceilingRung": "Documented",
+      "scoringPolarity": "deduction"
+    },
+    {
+      "id": "D36",
+      "name": "Supply-chain Provenance \u0026 Signing",
+      "lens": "securityCompliance",
+      "category": "security-compliance",
+      "evaluator": "tool",
+      "whatItMeasures": "Whether the build pipeline provides supply-chain integrity \u2014 generated provenance/attestation, signed artifacts (cosign/sigstore), an SBOM, and pinned build actions. Presence of the configuration, not a runtime guarantee.",
+      "family": "dimension",
+      "ceilingRung": "Documented",
+      "scoringPolarity": "deduction"
+    },
+    {
+      "id": "D37",
+      "name": "Vulnerability-disclosure Policy",
+      "lens": "securityCompliance",
+      "category": "security-compliance",
+      "evaluator": "tool",
+      "whatItMeasures": "Whether the repository publishes a coordinated-vulnerability-disclosure policy (SECURITY.md or security.txt) with a reporting contact, so finders know how to report a vulnerability. Presence of a policy file with a contact, not whether the policy is adequate or honoured.",
+      "family": "dimension",
+      "ceilingRung": "Documented",
+      "scoringPolarity": "deduction"
+    },
+    {
+      "id": "D39",
+      "name": "IL Efficiency",
+      "lens": "codeHealth",
+      "category": "code-quality",
+      "evaluator": "tool",
+      "whatItMeasures": "IL Efficiency",
+      "family": "dimension",
+      "ceilingRung": "Verified",
+      "scoringPolarity": "deduction"
+    },
+    {
+      "id": "D40",
+      "name": "Network Egress Confinement",
+      "lens": "securityCompliance",
+      "category": "security-compliance",
+      "evaluator": "tool",
+      "whatItMeasures": "Whether Kubernetes workloads restrict network EGRESS with a NetworkPolicy (or Cilium policy), limiting where a compromised pod can send data or reach a command-and-control server. Presence of committed egress-restricting policy, not runtime enforcement.",
+      "family": "dimension",
+      "ceilingRung": "Documented",
+      "scoringPolarity": "reward"
+    },
+    {
+      "id": "D41",
+      "name": "Kernel \u0026 Syscall Confinement",
+      "lens": "securityCompliance",
+      "category": "security-compliance",
+      "evaluator": "tool",
+      "whatItMeasures": "Whether Kubernetes workloads confine the kernel boundary \u2014 a seccomp profile (RuntimeDefault/Localhost) plus an AppArmor/SELinux mandatory-access-control layer \u2014 shrinking the syscall attack surface a container escape would use. Presence of committed confinement config, not runtime enforcement.",
+      "family": "dimension",
+      "ceilingRung": "Documented",
+      "scoringPolarity": "reward"
+    },
+    {
+      "id": "D42",
+      "name": "Runtime Threat Enforcement",
+      "lens": "securityCompliance",
+      "category": "security-compliance",
+      "evaluator": "tool",
+      "whatItMeasures": "Whether the Kubernetes deployment wires runtime threat enforcement \u2014 a detection engine (Tetragon/Falco) and/or an admission-control policy gate (Kyverno / OPA Gatekeeper / PodSecurity). Presence of committed policy, not a runtime guarantee.",
+      "family": "dimension",
+      "ceilingRung": "Documented",
+      "scoringPolarity": "reward"
+    },
+    {
+      "id": "D43",
+      "name": "Malicious Dependencies",
+      "lens": "securityCompliance",
+      "category": "security-compliance",
+      "evaluator": "tool",
+      "whatItMeasures": "Whether any dependency the repository declares is published as MALICIOUS rather than merely vulnerable \u2014 a package that is an attacker\u0027s work, in any ecosystem osv-scanner reads. Scored apart from D30 because the answer is binary: there is no safe version to upgrade to, and the fix is to remove the package and rotate every credential it could have read.",
+      "family": "dimension",
+      "ceilingRung": "Documented",
+      "scoringPolarity": "deduction"
+    },
+    {
+      "id": "D44",
+      "name": "Platform End-of-Life",
+      "lens": "securityCompliance",
+      "category": "security-compliance",
+      "evaluator": "tool",
+      "whatItMeasures": "Whether anyone still ships security patches for the platform this repository RUNS ON \u2014 the runtime it pins and the framework majors its own constraints hold it to. Separate from D12 because the question differs: a current Django on an end-of-life Python is perfectly up to date and completely unsupported, and the fix is a migration rather than a version bump. What the repository says it merely SUPPORTS is never charged.",
+      "family": "dimension",
+      "ceilingRung": "Documented",
+      "scoringPolarity": "deduction"
+    },
+    {
+      "id": "AC1",
+      "name": "Text alternatives",
+      "lens": "accessibility",
+      "evaluator": "tool",
+      "whatItMeasures": "Whether non-text content carries a text alternative \u2014 img/area/input[type=image] have alt, a meaningful svg has a title or aria-label, video has a captions track, and object/embed/canvas have a name or fallback content. Static markup readiness, not a WCAG conformance claim.",
+      "family": "meta",
+      "scoringPolarity": "deduction"
+    },
+    {
+      "id": "AC2",
+      "name": "Forms \u0026 labels",
+      "lens": "accessibility",
+      "evaluator": "tool",
+      "whatItMeasures": "Whether form controls have a programmatic label (an associated label, aria-label or aria-labelledby), buttons have text, links have an accessible name, a click handler on a plain element names the control it declares, fieldsets have a non-empty legend, known UI-library field components carry a label prop, and a placeholder isn\u0027t used as the only label. Static markup readiness, not a WCAG conformance claim.",
+      "family": "meta",
+      "scoringPolarity": "deduction"
+    },
+    {
+      "id": "AC3",
+      "name": "Page structure",
+      "lens": "accessibility",
+      "evaluator": "tool",
+      "whatItMeasures": "Whether pages declare a language (well-formed BCP-47) and a non-empty title, expose exactly one main landmark and a sane heading order with non-empty headings, keep zoom enabled, title their iframes, give data tables header cells, and avoid meta-refresh. Static markup readiness, not a WCAG conformance claim.",
+      "family": "meta",
+      "scoringPolarity": "deduction"
+    },
+    {
+      "id": "AC4",
+      "name": "Keyboard semantics",
+      "lens": "accessibility",
+      "evaluator": "tool",
+      "whatItMeasures": "Whether interactive behaviour is keyboard-reachable \u2014 no click handler on a non-interactive element lacking a role, tabindex and key handler, no element the repo\u0027s own CSS styles \u0060cursor: pointer\u0060 without giving it any of the three, no unfocusable element whose only binding is a mouse enter/leave pair or a double-click, no positive tabindex, no href-less anchor, no placeholder-href (#/javascript) link acting as a button. Static markup readiness, not a WCAG conformance claim.",
+      "family": "meta",
+      "scoringPolarity": "deduction"
+    },
+    {
+      "id": "AC5",
+      "name": "ARIA correctness",
+      "lens": "accessibility",
+      "evaluator": "tool",
+      "whatItMeasures": "Whether ARIA is used correctly \u2014 valid non-abstract roles, the ARIA state a role requires, valid (non-misspelled) aria-* attribute names, in-enum values for token-typed aria-* attributes, and no aria-hidden on (or wrapping) a focusable element. Static markup readiness, not a WCAG conformance claim.",
+      "family": "meta",
+      "scoringPolarity": "deduction"
+    },
+    {
+      "id": "AC6",
+      "name": "Visual \u0026 motion safety",
+      "lens": "accessibility",
+      "evaluator": "tool",
+      "whatItMeasures": "Whether focus outlines aren\u0027t removed without a replacement, motion respects prefers-reduced-motion, and literal CSS colour pairs meet contrast \u2014 PARTIAL: inline styles, in-repo \u003Cstyle\u003E blocks, in-repo .css files, var() tokens, Tailwind neutral utilities and CSS-in-JS literals are read (hex/rgb/hsl/named), never computed/runtime/external-CDN colour. Static markup readiness, not a WCAG conformance claim.",
+      "family": "meta",
+      "scoringPolarity": "deduction"
+    },
+    {
+      "id": "AC7",
+      "name": "A11y enforcement",
+      "lens": "accessibility",
+      "evaluator": "tool",
+      "whatItMeasures": "Whether accessibility is ENFORCED in the toolchain \u2014 an accessibility checker configured over the markup (an a11y lint rule set, e.g. eslint-plugin-jsx-a11y or vuejs-accessibility where the project lints JavaScript) and an automated accessibility assertion wired into tests or CI (axe/pa11y/Lighthouse or an equivalent) \u2014 on the Documented\u2192Verified\u2192Prevented ladder.",
+      "family": "meta",
+      "scoringPolarity": "deduction"
+    },
+    {
+      "id": "AX1",
+      "name": "Captive dependencies",
+      "lens": "architecture",
+      "evaluator": "tool",
+      "whatItMeasures": "Whether any singleton service captures a scoped/transient dependency \u2014 a silent lifetime/threading bug.",
+      "family": "meta",
+      "scoringPolarity": "deduction"
+    },
+    {
+      "id": "AX2",
+      "name": "Stateful singletons",
+      "lens": "architecture",
+      "evaluator": "tool",
+      "whatItMeasures": "Whether singleton services avoid mutable shared instance state that concurrent callers would race on.",
+      "family": "meta",
+      "scoringPolarity": "deduction"
+    },
+    {
+      "id": "AX3",
+      "name": "Project dependency cycles",
+      "lens": "architecture",
+      "evaluator": "tool",
+      "whatItMeasures": "Whether the project-reference graph is acyclic (cycles block independent build/deploy and signal eroding boundaries).",
+      "family": "meta",
+      "scoringPolarity": "deduction"
+    },
+    {
+      "id": "AX4",
+      "name": "Dependency direction",
+      "lens": "architecture",
+      "evaluator": "tool",
+      "whatItMeasures": "Whether dependencies point inward (Domain \u2190 Application \u2190 Infrastructure/Web) \u2014 the clean-architecture dependency rule, checked across the project graph.",
+      "family": "meta",
+      "scoringPolarity": "deduction"
+    },
+    {
+      "id": "AX5",
+      "name": "Architecture \u0026 structure",
+      "lens": "architecture",
+      "evaluator": "tool",
+      "whatItMeasures": "Whether the codebase has a recognisable, scale-appropriate structure (a named architectural style, or modular enough for its size) rather than being an ad-hoc ball of mud.",
+      "family": "meta",
+      "scoringPolarity": "deduction"
+    },
+    {
+      "id": "AX6",
+      "name": "Interface segregation",
+      "lens": "architecture",
+      "evaluator": "tool",
+      "whatItMeasures": "Whether interfaces stay focused rather than fat \u2014 the Interface-Segregation principle (SOLID \u0027I\u0027).",
+      "family": "meta",
+      "scoringPolarity": "deduction"
+    },
+    {
+      "id": "AX7",
+      "name": "Slice cohesion",
+      "lens": "architecture",
+      "evaluator": "tool",
+      "whatItMeasures": "Whether feature slices stay independent (no direct cross-slice references) \u2014 the discipline that makes vertical-slice architecture pay off.",
+      "family": "meta",
+      "scoringPolarity": "deduction"
+    },
+    {
+      "id": "AX8",
+      "name": "Test isolation",
+      "lens": "architecture",
+      "evaluator": "tool",
+      "whatItMeasures": "Whether production projects stay free of references to test projects \u2014 tests may depend on production, never the reverse.",
+      "family": "meta",
+      "scoringPolarity": "deduction"
+    },
+    {
+      "id": "AX9",
+      "name": "CQS / query purity",
+      "lens": "architecture",
+      "evaluator": "tool",
+      "whatItMeasures": "Whether read (query) handlers stay side-effect-free \u2014 a query that writes persistent state or raises events breaks CQS and makes reads unsafe to retry, cache, or route to a read replica.",
+      "family": "meta",
+      "scoringPolarity": "deduction"
+    },
+    {
+      "id": "AX10",
+      "name": "Code composition",
+      "lens": "architecture",
+      "evaluator": "tool",
+      "whatItMeasures": "How the codebase splits by code ROLE \u2014 domain, application, infrastructure, test, generated. The significance map behind the knowledge/coupling weighting, and a DDD signal in its own right: a thin domain core under fat infrastructure is the anemic-domain smell, quantified.",
+      "family": "meta",
+      "scoringPolarity": "deduction"
+    },
+    {
+      "id": "AXA1",
+      "name": "Runtime unauthenticated reachability",
+      "lens": "securityCompliance",
+      "evaluator": "tool",
+      "whatItMeasures": "Of the screens reached by crawling with the application\u0027s own logged-in session, which ones also answer a GET carrying no credentials. Observed on the live app; GET only, and only URLs the crawl already fetched. Advisory; never scored.",
+      "family": "meta",
+      "scoringPolarity": "deduction"
+    },
+    {
+      "id": "AXB1",
+      "name": "Runtime evidence locked \u2014 no reproducible boot",
+      "lens": "maturity",
+      "evaluator": "tool",
+      "whatItMeasures": "The Runtime Evidence tier found no declared way to boot this app (docker-compose, Aspire AppHost, or a Dockerfile), so no live runtime a11y/egress/header evidence was gathered. Advisory \u2014 never affects the CAI score.",
+      "family": "meta",
+      "scoringPolarity": "deduction"
+    },
+    {
+      "id": "AXB2",
+      "name": "Runtime readiness",
+      "lens": "maturity",
+      "evaluator": "tool",
+      "whatItMeasures": "How reproducibly this app can be booted for runtime evidence, plus the test frameworks detected. Advisory \u2014 never affects the score.",
+      "family": "meta",
+      "scoringPolarity": "deduction"
+    },
+    {
+      "id": "AXH1",
+      "name": "Runtime security headers",
+      "lens": "securityCompliance",
+      "evaluator": "tool",
+      "whatItMeasures": "HTTP security headers the live app actually set, observed by booting it in our no-coupling sandbox \u2014 advisory evidence for AppSec / CRA / NIS2 runtime secure-defaults. Never scored.",
+      "family": "meta",
+      "scoringPolarity": "deduction"
+    },
+    {
+      "id": "AXI1",
+      "name": "Runtime container hardening",
+      "lens": "securityCompliance",
+      "evaluator": "tool",
+      "whatItMeasures": "The confinement each container was actually started with \u2014 effective user, privileged mode, added and dropped capabilities, read-only root filesystem, no-new-privileges \u2014 read from the running stack rather than from a Dockerfile. Advisory; never scored.",
+      "family": "meta",
+      "scoringPolarity": "deduction"
+    },
+    {
+      "id": "AXK1",
+      "name": "Runtime cookie security",
+      "lens": "securityCompliance",
+      "evaluator": "tool",
+      "whatItMeasures": "The HttpOnly, Secure and SameSite flags on the cookies the live application actually issued, read from its own responses. Advisory; never scored.",
+      "family": "meta",
+      "scoringPolarity": "deduction"
+    },
+    {
+      "id": "AXO1",
+      "name": "Runtime API surface",
+      "lens": "securityCompliance",
+      "evaluator": "tool",
+      "whatItMeasures": "The API description the running application serves about itself, diffed against the one the repository commits, plus anonymous GET probes of its parameter-free operations. Templated paths and non-GET methods are listed as surface and never requested. Advisory; never scored.",
+      "family": "meta",
+      "scoringPolarity": "deduction"
+    },
+    {
+      "id": "AXP1",
+      "name": "Runtime third-party data flows",
+      "lens": "securityCompliance",
+      "evaluator": "tool",
+      "whatItMeasures": "Third-party hosts the rendered UI tried to reach (analytics/trackers/CDNs), observed at render time \u2014 advisory evidence for GDPR data-protection-by-default. Never scored; jurisdiction/role never inferred.",
+      "family": "meta",
+      "scoringPolarity": "deduction"
+    },
+    {
+      "id": "AXR1",
+      "name": "Runtime accessibility (rendered)",
+      "lens": "accessibility",
+      "evaluator": "tool",
+      "whatItMeasures": "WCAG success criteria verified in a real headless-browser render (axe-core), double-render checked and kept as advisory evidence \u2014 never scored.",
+      "family": "meta",
+      "scoringPolarity": "deduction"
+    },
+    {
+      "id": "AXS1",
+      "name": "Runtime exposed surface",
+      "lens": "securityCompliance",
+      "evaluator": "tool",
+      "whatItMeasures": "Every network binding the application actually opened when booted in our no-coupling sandbox \u2014 service, container port, host port, protocol and bind scope \u2014 with any port the repository\u0027s own files never declare called out. Observed, never inferred from a manifest. Advisory; never scored.",
+      "family": "meta",
+      "scoringPolarity": "deduction"
+    },
+    {
+      "id": "C1",
+      "name": "Data Protection",
+      "lens": "securityCompliance",
+      "evaluator": "tool",
+      "whatItMeasures": "Whether sensitive data is encrypted at rest and in transit and keys are vaulted.",
+      "family": "meta",
+      "scoringPolarity": "deduction"
+    },
+    {
+      "id": "C2",
+      "name": "Access Controls",
+      "lens": "securityCompliance",
+      "evaluator": "tool",
+      "whatItMeasures": "Whether access is authorized by default \u2014 a framework authorization attribute/decorator or policy, or imperative guard methods (throw-on-violation) called from handlers.",
+      "family": "meta",
+      "scoringPolarity": "deduction"
+    },
+    {
+      "id": "C3",
+      "name": "Audit Trail",
+      "lens": "securityCompliance",
+      "evaluator": "tool",
+      "whatItMeasures": "Whether changes to sensitive data are recorded (who, what, when) for compliance \u002B incident response.",
+      "family": "meta",
+      "scoringPolarity": "deduction"
+    },
+    {
+      "id": "C4",
+      "name": "Data Retention",
+      "lens": "securityCompliance",
+      "evaluator": "tool",
+      "whatItMeasures": "Whether data has a defined lifetime \u2014 retention periods, TTLs, cleanup jobs (storage limitation).",
+      "family": "meta",
+      "scoringPolarity": "deduction"
+    },
+    {
+      "id": "C5",
+      "name": "Data-Subject Rights",
+      "lens": "securityCompliance",
+      "evaluator": "tool",
+      "whatItMeasures": "Whether GDPR data-subject requests are supported in code \u2014 erasure, export/portability, consent.",
+      "family": "meta",
+      "scoringPolarity": "deduction"
+    },
+    {
+      "id": "DM1",
+      "name": "Aggregate boundaries",
+      "lens": "domainModelling",
+      "evaluator": "tool",
+      "whatItMeasures": "Whether aggregates reference each other by identity (id) rather than by direct object reference \u2014 the core DDD consistency-boundary rule.",
+      "family": "meta",
+      "scoringPolarity": "deduction"
+    },
+    {
+      "id": "DM2",
+      "name": "Strongly-typed ids",
+      "lens": "domainModelling",
+      "evaluator": "tool",
+      "whatItMeasures": "How much of the domain uses strongly-typed ids vs raw Guid/string/int \u2014 adoption curve, not all-or-nothing.",
+      "family": "meta",
+      "scoringPolarity": "deduction"
+    },
+    {
+      "id": "DM3",
+      "name": "Integration-event coupling",
+      "lens": "domainModelling",
+      "evaluator": "tool",
+      "whatItMeasures": "Whether cross-context integration events stay loosely coupled \u2014 no producer-owned enums/domain types leaking to consumers. Shared-kernel/contracts types are allowed.",
+      "family": "meta",
+      "scoringPolarity": "deduction"
+    },
+    {
+      "id": "DM4",
+      "name": "Rich vs anemic model",
+      "lens": "domainModelling",
+      "evaluator": "tool",
+      "whatItMeasures": "Whether aggregates/entities carry the behaviour that protects their invariants, rather than being data bags driven by external services.",
+      "family": "meta",
+      "scoringPolarity": "deduction"
+    },
+    {
+      "id": "DM5",
+      "name": "Encapsulated state",
+      "lens": "domainModelling",
+      "evaluator": "tool",
+      "whatItMeasures": "Whether entities protect their state (private/init-only setters) instead of exposing public setters that bypass invariants. Softened when a rehydration framework (Marten/EF) is present.",
+      "family": "meta",
+      "scoringPolarity": "deduction"
+    },
+    {
+      "id": "DM6",
+      "name": "Domain \u2194 infrastructure boundary",
+      "lens": "domainModelling",
+      "evaluator": "tool",
+      "whatItMeasures": "Whether the domain layer stays free of infrastructure dependencies (EF/Marten/HTTP/ASP.NET) \u2014 the clean-architecture dependency rule.",
+      "family": "meta",
+      "scoringPolarity": "deduction"
+    },
+    {
+      "id": "DM7",
+      "name": "Repository granularity",
+      "lens": "domainModelling",
+      "evaluator": "tool",
+      "whatItMeasures": "Whether repositories are per aggregate root (not per child entity) so the root\u0027s invariants can\u0027t be bypassed.",
+      "family": "meta",
+      "scoringPolarity": "deduction"
+    },
+    {
+      "id": "DM8",
+      "name": "Value-object opportunities",
+      "lens": "domainModelling",
+      "evaluator": "llm",
+      "whatItMeasures": "Whether clusters of primitives that travel together (a missing value object) are extracted \u2014 a low-weight suggestion, LLM-confirmed when configured.",
+      "family": "meta",
+      "scoringPolarity": "deduction"
+    },
+    {
+      "id": "DM9",
+      "name": "Scattered domain decisions",
+      "lens": "domainModelling",
+      "evaluator": "tool",
+      "whatItMeasures": "Whether one domain rule is decided \u2014 or one measurement produced \u2014 in more than one place, rather than living on the type that owns it. A repeated judgement or a repeated derivation, not repeated text, so a clone detector cannot see either; and centralising the judgement does not fix the derivation, because two producers of the same numbers can disagree while every rule reading them is correct.",
+      "family": "meta",
+      "scoringPolarity": "deduction"
+    },
+    {
+      "id": "DM10",
+      "name": "One transaction, one aggregate",
+      "lens": "domainModelling",
+      "evaluator": "tool",
+      "whatItMeasures": "Whether a single operation mutates more than one aggregate root. An aggregate is a consistency boundary, so saving two together fuses them into one \u2014 the second\u0027s invariants come to depend on the first\u0027s transaction, and the pair can no longer be separated. Reads of other aggregates are not counted.",
+      "family": "meta",
+      "scoringPolarity": "deduction"
+    },
+    {
+      "id": "DM11",
+      "name": "Constructible invalid state",
+      "lens": "domainModelling",
+      "evaluator": "tool",
+      "whatItMeasures": "Whether an aggregate can be constructed in a state its own rules forbid \u2014 a public constructor that takes a raw primitive, stores it, and validates nothing, with no factory beside it. A constructor taking only value objects is not counted: each parameter has already validated itself.",
+      "family": "meta",
+      "scoringPolarity": "deduction"
+    },
+    {
+      "id": "DM12",
+      "name": "Ambient inputs in the domain",
+      "lens": "domainModelling",
+      "evaluator": "tool",
+      "whatItMeasures": "Whether domain types receive the time and randomness their rules depend on, rather than reading the process clock or a global random source directly \u2014 an ambient read makes the rule it feeds untestable at the instant that matters and lets two reads inside one operation disagree.",
+      "family": "meta",
+      "scoringPolarity": "deduction"
+    },
+    {
+      "id": "ED1",
+      "name": "Handler temporal coupling",
+      "lens": "eventDriven",
+      "evaluator": "tool",
+      "whatItMeasures": "Whether event handlers stay asynchronous (no blocking remote HTTP/gRPC calls awaited inside a handler).",
+      "family": "meta",
+      "scoringPolarity": "deduction"
+    },
+    {
+      "id": "ED2",
+      "name": "Event/command shape",
+      "lens": "eventDriven",
+      "evaluator": "tool",
+      "whatItMeasures": "Whether commands have a single handler (one owner of the decision) and fan-out is modelled with events.",
+      "family": "meta",
+      "scoringPolarity": "deduction"
+    },
+    {
+      "id": "ED3",
+      "name": "Event naming",
+      "lens": "eventDriven",
+      "evaluator": "tool",
+      "whatItMeasures": "Whether events are named in the past tense (a clarity nudge \u2014 low weight).",
+      "family": "meta",
+      "scoringPolarity": "deduction"
+    },
+    {
+      "id": "ED4",
+      "name": "Outbox / dual-write",
+      "lens": "eventDriven",
+      "evaluator": "tool",
+      "whatItMeasures": "Whether state changes and message publishes are atomic (a transactional outbox) rather than a crash-unsafe dual write.",
+      "family": "meta",
+      "scoringPolarity": "deduction"
+    },
+    {
+      "id": "ED5",
+      "name": "Idempotency",
+      "lens": "productionReadiness",
+      "evaluator": "llm",
+      "whatItMeasures": "Whether retry-prone mutations (command handlers \u002B message/event consumers) are idempotent so an at-least-once redelivery or client retry doesn\u0027t double-apply the effect \u2014 heuristic at-risk detection confirmed by language model, advisory.",
+      "family": "meta",
+      "scoringPolarity": "deduction"
+    },
+    {
+      "id": "ES1",
+      "name": "Fold determinism",
+      "lens": "eventSourcing",
+      "evaluator": "tool",
+      "whatItMeasures": "Whether Apply/When folds reconstruct state purely from the event (no DateTime.Now, Guid.NewGuid, Random or IO) so replay is reproducible.",
+      "family": "meta",
+      "scoringPolarity": "deduction"
+    },
+    {
+      "id": "ES2",
+      "name": "Immutable events",
+      "lens": "eventSourcing",
+      "evaluator": "tool",
+      "whatItMeasures": "Whether persisted events are immutable facts (init-only/readonly) \u2014 a settable event member lets stored history be rewritten.",
+      "family": "meta",
+      "scoringPolarity": "deduction"
+    },
+    {
+      "id": "ES3",
+      "name": "PII in the event store",
+      "lens": "eventSourcing",
+      "evaluator": "llm",
+      "whatItMeasures": "Whether the append-only event log avoids un-erasable personal data (or has a crypto-shredding strategy) \u2014 a GDPR right-to-erasure risk.",
+      "family": "meta",
+      "scoringPolarity": "deduction"
+    },
+    {
+      "id": "GD1",
+      "name": "Unfinished \u0026 placeholder code",
+      "lens": "codeHealth",
+      "evaluator": "tool",
+      "whatItMeasures": "Unreviewed-generation residue: shipped members still throwing NotImplementedException, and placeholder string literals left in non-test, non-generated code. Scored as a quality signature, never as a claim about authorship.",
+      "family": "meta",
+      "scoringPolarity": "deduction"
+    },
+    {
+      "id": "IC1",
+      "name": "Incompleteness \u0026 stubs",
+      "lens": "codeHealth",
+      "evaluator": "tool",
+      "whatItMeasures": "Unfinished work detected by code SHAPE, not keywords: members that only throw a \u0022not implemented\u0022 exception, methods that take inputs and return a constant, async methods that never await, dead \u0060if (false)\u0060 / \u0060#if false\u0060 branches, and skeleton types most of whose members are holes. A real, objective slice of technical debt.",
+      "family": "meta",
+      "scoringPolarity": "deduction"
+    },
+    {
+      "id": "LA1",
+      "name": "Personal-Data Handling (GDPR)",
+      "lens": "securityCompliance",
+      "evaluator": "llm",
+      "whatItMeasures": "LLM-confirmed personal-data handling surface \u2014 fields that are genuine personal data about a real person (not fiction/test/config), surfaced for the GDPR Art. 25/32 self-assessment. Advisory.",
+      "family": "meta",
+      "scoringPolarity": "deduction"
+    },
+    {
+      "id": "LA2",
+      "name": "Alt-Text Quality (WCAG 1.1.1)",
+      "lens": "accessibility",
+      "evaluator": "llm",
+      "whatItMeasures": "LLM-judged quality of image alt text \u2014 whether each alt is a meaningful equivalent rather than a filename, generic word or placeholder. Advisory; complements the deterministic \u0027alt present?\u0027 check.",
+      "family": "meta",
+      "scoringPolarity": "deduction"
+    },
+    {
+      "id": "LA3",
+      "name": "Vulnerability-Disclosure Policy",
+      "lens": "securityCompliance",
+      "evaluator": "llm",
+      "whatItMeasures": "LLM-judged whether a SECURITY.md / security.txt is a real coordinated vulnerability-disclosure policy (contact \u002B how to report \u002B handling), not just a stub. Advisory.",
+      "family": "meta",
+      "scoringPolarity": "deduction"
+    },
+    {
+      "id": "LA4",
+      "name": "Dev/Test/Prod Separation",
+      "lens": "securityCompliance",
+      "evaluator": "llm",
+      "whatItMeasures": "LLM-judged whether configuration separates development/test/production (distinct per-environment settings) rather than commingling them. Advisory.",
+      "family": "meta",
+      "scoringPolarity": "deduction"
+    },
+    {
+      "id": "LA5",
+      "name": "Link \u0026 Button Text Quality (WCAG 2.4.4)",
+      "lens": "accessibility",
+      "evaluator": "llm",
+      "whatItMeasures": "LLM-judged descriptiveness of link/button text \u2014 whether each conveys its purpose out of context rather than a vague \u0027click here\u0027/\u0027read more\u0027. Advisory; complements the deterministic \u0027has a name?\u0027 check.",
+      "family": "meta",
+      "scoringPolarity": "deduction"
+    },
+    {
+      "id": "LA6",
+      "name": "Heading \u0026 Label Text Quality (WCAG 2.4.6)",
+      "lens": "accessibility",
+      "evaluator": "llm",
+      "whatItMeasures": "LLM-judged descriptiveness of heading/label text \u2014 whether each meaningfully describes its section or field rather than a placeholder (\u0027Heading\u0027, \u0027Untitled\u0027, \u0027Label\u0027). Advisory.",
+      "family": "meta",
+      "scoringPolarity": "deduction"
+    },
+    {
+      "id": "M1",
+      "name": "Documentation (README)",
+      "lens": "maturity",
+      "evaluator": "tool",
+      "whatItMeasures": "Whether the repo and its projects have a README, and whether it\u0027s substantive and current.",
+      "family": "meta",
+      "scoringPolarity": "deduction"
+    },
+    {
+      "id": "M2",
+      "name": "Architecture documentation",
+      "lens": "maturity",
+      "evaluator": "tool",
+      "whatItMeasures": "Whether key decisions (ADRs) and the high-level shape (C4/diagrams) are written down.",
+      "family": "meta",
+      "scoringPolarity": "deduction"
+    },
+    {
+      "id": "M3",
+      "name": "Folder \u0026 project structure",
+      "lens": "maturity",
+      "evaluator": "tool",
+      "whatItMeasures": "Whether the repo is organised deliberately \u2014 src/test separation and consistent project naming.",
+      "family": "meta",
+      "scoringPolarity": "deduction"
+    },
+    {
+      "id": "M4",
+      "name": "Documentation accuracy",
+      "lens": "maturity",
+      "evaluator": "llm",
+      "whatItMeasures": "Whether the README actually describes the code that exists (LLM-judged, advisory).",
+      "family": "meta",
+      "scoringPolarity": "deduction"
+    },
+    {
+      "id": "P1",
+      "name": "CI/CD gates",
+      "lens": "productionReadiness",
+      "evaluator": "tool",
+      "whatItMeasures": "Whether an automated pipeline builds and tests every change.",
+      "family": "meta",
+      "scoringPolarity": "deduction"
+    },
+    {
+      "id": "P2",
+      "name": "Observability",
+      "lens": "productionReadiness",
+      "evaluator": "tool",
+      "whatItMeasures": "Whether the code is diagnosable in production \u2014 structured logging, tracing/metrics, health checks.",
+      "family": "meta",
+      "scoringPolarity": "deduction"
+    },
+    {
+      "id": "P3",
+      "name": "Security \u0026 performance tooling",
+      "lens": "productionReadiness",
+      "evaluator": "tool",
+      "whatItMeasures": "Whether SAST, secret/dependency scanning and performance benchmarking are wired in (presence, not runtime).",
+      "family": "meta",
+      "scoringPolarity": "deduction"
+    },
+    {
+      "id": "P4",
+      "name": "Deployment \u0026 Rollback",
+      "lens": "productionReadiness",
+      "evaluator": "tool",
+      "whatItMeasures": "Whether releases are automated and safely reversible (probes, rolling updates, approval gates) \u2014 from manifests/pipeline files, not the live environment.",
+      "family": "meta",
+      "scoringPolarity": "deduction"
+    },
+    {
+      "id": "P5",
+      "name": "DR \u0026 Backup",
+      "lens": "productionReadiness",
+      "evaluator": "tool",
+      "whatItMeasures": "Whether disaster recovery is planned and codified \u2014 backups, geo-recovery, RTO/RPO, persistence guarantees \u2014 from IaC \u002B container manifests \u002B docs, never the live cloud.",
+      "family": "meta",
+      "scoringPolarity": "deduction"
+    },
+    {
+      "id": "P6",
+      "name": "Release Hygiene",
+      "lens": "productionReadiness",
+      "evaluator": "tool",
+      "whatItMeasures": "Whether releases are traceable \u2014 a maintained changelog and explicit version stamping.",
+      "family": "meta",
+      "scoringPolarity": "deduction"
+    },
+    {
+      "id": "P7",
+      "name": "Outbound HTTP resilience",
+      "lens": "productionReadiness",
+      "evaluator": "tool",
+      "whatItMeasures": "Whether outbound HTTP calls are wrapped in resilience (retry/timeout/circuit-breaker) so a failing dependency doesn\u0027t cascade.",
+      "family": "meta",
+      "scoringPolarity": "deduction"
+    },
+    {
+      "id": "P8",
+      "name": "Schema migrations",
+      "lens": "productionReadiness",
+      "evaluator": "tool",
+      "whatItMeasures": "Whether database schema changes go through versioned migrations rather than being auto-created from the model (EF Core EnsureCreated(), GORM AutoMigrate, SQLAlchemy create_all, TypeORM synchronize, Hibernate ddl-auto).",
+      "family": "meta",
+      "scoringPolarity": "deduction"
+    },
+    {
+      "id": "P9",
+      "name": "Domain vs controller coverage",
+      "lens": "productionReadiness",
+      "evaluator": "tool",
+      "whatItMeasures": "Whether test coverage concentrates on the domain (business rules) rather than the trivial web/controller layer \u2014 a focus check a generic tool can\u0027t make.",
+      "family": "meta",
+      "scoringPolarity": "deduction"
+    },
+    {
+      "id": "P10",
+      "name": "Library API \u0026 versioning",
+      "lens": "productionReadiness",
+      "evaluator": "tool",
+      "whatItMeasures": "For a library: a deliberate (small) public API surface and explicit semantic versioning so consumers can depend on it safely.",
+      "family": "meta",
+      "scoringPolarity": "deduction"
+    },
+    {
+      "id": "P11",
+      "name": "BDD / executable specs",
+      "lens": "productionReadiness",
+      "evaluator": "tool",
+      "whatItMeasures": "Whether behaviour is captured as executable Gherkin specifications (a plus for shared understanding) \u2014 only assessed when a BDD framework is present.",
+      "family": "meta",
+      "scoringPolarity": "deduction"
+    },
+    {
+      "id": "P12",
+      "name": "CI test-gate honesty",
+      "lens": "productionReadiness",
+      "evaluator": "tool",
+      "whatItMeasures": "Whether the CI gate executes the test inventory it appears to have: excluded suites, skipped tests, and coverage collected without a threshold.",
+      "family": "meta",
+      "scoringPolarity": "deduction"
+    },
+    {
+      "id": "PF1",
+      "name": "Benchmark discipline",
+      "lens": "performance",
+      "evaluator": "tool",
+      "whatItMeasures": "Whether the code protects its performance with benchmarks \u2014 a benchmark suite, allocation/memory measurement, and (ideally) a CI gate. Presence is credited as a bonus, never a deduction.",
+      "family": "meta",
+      "scoringPolarity": "reward"
+    },
+    {
+      "id": "PF2",
+      "name": "Allocation hygiene",
+      "lens": "performance",
+      "evaluator": "tool",
+      "whatItMeasures": "Whether the code is written to minimise allocations so it doesn\u0027t pressure its host\u0027s memory manager \u2014 buffer/slice views over copies, object pooling, stack or value-type allocation, and buffer writers. Reward-only: credited where present, never penalised where a simpler style is fine.",
+      "family": "meta",
+      "scoringPolarity": "reward"
+    },
+    {
+      "id": "PF3",
+      "name": "Async \u0026 latency hygiene",
+      "lens": "performance",
+      "evaluator": "tool",
+      "whatItMeasures": "Whether asynchronous code stays responsive \u2014 it avoids sync-over-async blocking (a .NET .Wait()/.GetAwaiter().GetResult(), a time.sleep or blocking HTTP call inside a Python coroutine, a *Sync call inside an async JavaScript function, block_on inside a Rust async fn, runBlocking inside a Kotlin suspend function, block() inside a Reactor publisher) that stalls a thread or event loop and risks deadlock, and, where the code is a reusable library on .NET, awaits with ConfigureAwait(false) so it never captures and stalls its caller\u0027s context.",
+      "family": "meta",
+      "scoringPolarity": "deduction"
+    },
+    {
+      "id": "R1",
+      "name": "Type Safety",
+      "lens": "codeHealth",
+      "evaluator": "tool",
+      "whatItMeasures": "How much of the frontend is typed TypeScript vs untyped JavaScript.",
+      "family": "meta",
+      "scoringPolarity": "deduction"
+    },
+    {
+      "id": "R2",
+      "name": "Cyclomatic Complexity",
+      "lens": "codeHealth",
+      "evaluator": "tool",
+      "whatItMeasures": "Per-function cyclomatic/cognitive complexity from the token-level function scanner (D-386) \u2014 real branching, not a regex heuristic.",
+      "family": "meta",
+      "scoringPolarity": "deduction"
+    },
+    {
+      "id": "R3",
+      "name": "Large Files",
+      "lens": "codeHealth",
+      "evaluator": "tool",
+      "whatItMeasures": "How many source files exceed the large-file threshold.",
+      "family": "meta",
+      "scoringPolarity": "deduction"
+    },
+    {
+      "id": "R4",
+      "name": "Test Coverage",
+      "lens": "productionReadiness",
+      "evaluator": "tool",
+      "whatItMeasures": "Static test reachability (D-386): the share of production files reachable from any test via the import graph \u2014 measured without running anything.",
+      "family": "meta",
+      "scoringPolarity": "deduction"
+    },
+    {
+      "id": "R5",
+      "name": "Dependency Freshness",
+      "lens": "productionReadiness",
+      "evaluator": "tool",
+      "whatItMeasures": "How outdated the npm dependencies are (a maturity signal). JS/npm CVEs are scored separately in D30 (JS/npm Dependency Vulnerabilities).",
+      "family": "meta",
+      "scoringPolarity": "deduction"
+    },
+    {
+      "id": "R6",
+      "name": "Tooling",
+      "lens": "productionReadiness",
+      "evaluator": "tool",
+      "whatItMeasures": "Whether the project wires up test, lint and typecheck \u2014 detected from each package.json script\u0027s COMMAND (eslint / tsc / vitest / jest / playwright), not just its name, and corroborated against CI-workflow invocations so a tool run only in CI still counts.",
+      "family": "meta",
+      "scoringPolarity": "deduction"
+    },
+    {
+      "id": "R7",
+      "name": "Dead Code",
+      "lens": "codeHealth",
+      "evaluator": "tool",
+      "whatItMeasures": "Files unreachable from every application/tooling/test entry point, and exports nothing imports (module-graph reachability, D-386).",
+      "family": "meta",
+      "scoringPolarity": "deduction"
+    },
+    {
+      "id": "R8",
+      "name": "Dependency Hygiene",
+      "lens": "productionReadiness",
+      "evaluator": "tool",
+      "whatItMeasures": "npm dependency truthfulness (D-386): unused dependencies, imports not declared anywhere, and type-/test-only packages shipped as production deps.",
+      "family": "meta",
+      "scoringPolarity": "deduction"
+    },
+    {
+      "id": "R9",
+      "name": "Circular Imports",
+      "lens": "architecture",
+      "evaluator": "tool",
+      "whatItMeasures": "Import cycles in the module graph (D-386) \u2014 files that can only be understood and changed together.",
+      "family": "meta",
+      "scoringPolarity": "deduction"
+    },
+    {
+      "id": "R10",
+      "name": "Code Duplication",
+      "lens": "codeHealth",
+      "evaluator": "tool",
+      "whatItMeasures": "Near-exact copy-pasted blocks of substantial extent across the frontend (the D4 clone algorithm over JS/TS tokens, D-386): a block is reported only where its copies still agree on most of their own identifiers and literals, or were renamed as they were pasted but kept most of their constants, and where the copies carry enough code to stand on their own or the copied extent reaches 30 lines \u2014 so a re-implementation sharing neither names nor values, and a small pasted declaration, are both found and deliberately not reported, and a clean R10 is not a claim that nothing was copied.",
+      "family": "meta",
+      "scoringPolarity": "deduction"
+    },
+    {
+      "id": "R11",
+      "name": "Import Boundaries",
+      "lens": "architecture",
+      "evaluator": "tool",
+      "whatItMeasures": "Conformance to the detected frontend architecture layout (feature-sliced / layered src) plus cross-package deep-import rules (D-386).",
+      "family": "meta",
+      "scoringPolarity": "deduction"
+    },
+    {
+      "id": "S1",
+      "name": "Web-Security Posture",
+      "lens": "securityCompliance",
+      "evaluator": "tool",
+      "whatItMeasures": "Transport security, security headers, secure cookies, input validation, middleware order and crypto hygiene (presence, not runtime).",
+      "family": "meta",
+      "scoringPolarity": "deduction"
+    },
+    {
+      "id": "SC1",
+      "name": "Supply-chain hygiene",
+      "lens": "securityCompliance",
+      "evaluator": "tool",
+      "whatItMeasures": "Reproducible, pinned builds (SSDF PW.4 / SLSA): dependency lockfiles \u002B the deny-by-default egress sandbox the build runs in (it can fetch only from allow-listed registries \u2014 build-time provenance). Advisory; never scored.",
+      "family": "meta",
+      "scoringPolarity": "deduction"
+    },
+    {
+      "id": "X1",
+      "name": "Async correctness",
+      "lens": "codeHealth",
+      "evaluator": "tool",
+      "whatItMeasures": "Whether the code avoids sync-over-async (deadlock-prone blocking on tasks) and async void.",
+      "family": "meta",
+      "scoringPolarity": "deduction"
+    },
+    {
+      "id": "X2",
+      "name": "Cancellation propagation",
+      "lens": "codeHealth",
+      "evaluator": "tool",
+      "whatItMeasures": "Whether async methods accept a CancellationToken so work can be cancelled (adoption curve).",
+      "family": "meta",
+      "scoringPolarity": "deduction"
+    },
+    {
+      "id": "X3",
+      "name": "Exception handling",
+      "lens": "codeHealth",
+      "evaluator": "tool",
+      "whatItMeasures": "Whether exceptions are handled rather than silently swallowed or rethrown with lost stack traces.",
+      "family": "meta",
+      "scoringPolarity": "deduction"
+    },
+    {
+      "id": "X4",
+      "name": "Structured logging",
+      "lens": "codeHealth",
+      "evaluator": "tool",
+      "whatItMeasures": "Whether log calls use message templates (queryable) rather than interpolated strings.",
+      "family": "meta",
+      "scoringPolarity": "deduction"
+    },
+    {
+      "id": "X5",
+      "name": "Nullable reference types",
+      "lens": "codeHealth",
+      "evaluator": "tool",
+      "whatItMeasures": "Whether nullable reference types are enabled and not undermined by heavy \u0060!\u0060 suppression.",
+      "family": "meta",
+      "scoringPolarity": "deduction"
+    },
+    {
+      "id": "X6",
+      "name": "Hand-rolled structured-format parsing",
+      "lens": "codeHealth",
+      "evaluator": "tool",
+      "whatItMeasures": "Whether JSON/XML is parsed with regex/string hacks while a real parser is already referenced in the same project \u2014 a classic source of silent data bugs.",
+      "family": "meta",
+      "scoringPolarity": "deduction"
+    },
+    {
+      "id": "X7",
+      "name": "Silent fallback defaults",
+      "lens": "codeHealth",
+      "evaluator": "tool",
+      "whatItMeasures": "Whether parse/lookup failure paths return hard-coded constants with no logging or throw \u2014 failures that convert data errors into silent behavior changes.",
+      "family": "meta",
+      "scoringPolarity": "deduction"
+    },
+    {
+      "id": "X8",
+      "name": "JS interop contract",
+      "lens": "codeHealth",
+      "evaluator": "tool",
+      "whatItMeasures": "Whether string-named JS interop bindings resolve against the first-party JavaScript, and whether anything guards the boundary against renames.",
+      "family": "meta",
+      "scoringPolarity": "deduction"
+    },
+    {
+      "id": "X9",
+      "name": "Subsumed condition operand",
+      "lens": "codeHealth",
+      "evaluator": "tool",
+      "whatItMeasures": "Whether any \u0060||\u0060/\u0060\u0026\u0026\u0060 operand logically implies another in the same chain, making it dead \u2014 the expression means something wider (or narrower) than it reads.",
+      "family": "meta",
+      "scoringPolarity": "deduction"
+    },
+    {
+      "id": "X10",
+      "name": "Duplicated predicate",
+      "lens": "codeHealth",
+      "evaluator": "tool",
+      "whatItMeasures": "Whether one non-trivial boolean expression is written out character-identically in two or more files \u2014 a single-line clone the token-window duplication detector cannot see.",
+      "family": "meta",
+      "scoringPolarity": "deduction"
+    },
+    {
+      "id": "X12",
+      "name": "Unreachable branch",
+      "lens": "codeHealth",
+      "evaluator": "tool",
+      "whatItMeasures": "Whether any branch is dead by construction \u2014 a switch arm whose label can never equal a case-normalised subject, or an \u0060else if\u0060 whose predicate the arm above has already swallowed.",
+      "family": "meta",
+      "scoringPolarity": "deduction"
+    },
+    {
+      "id": "X13",
+      "name": "Undrained process stream",
+      "lens": "codeHealth",
+      "evaluator": "tool",
+      "whatItMeasures": "Whether a child process with BOTH standard streams redirected drains both \u2014 reading one to the end while the other is never read deadlocks once the child fills the unread pipe.",
+      "family": "meta",
+      "scoringPolarity": "deduction"
+    },
+    {
+      "id": "X14",
+      "name": "Bypassable address classification",
+      "lens": "securityCompliance",
+      "evaluator": "tool",
+      "whatItMeasures": "Whether a hand-rolled public/private IP check can be walked past \u2014 a method that unwraps IPv4-mapped IPv6 but returns the opposite verdict for the same host written as IPv4-compatible, 6to4 or NAT64.",
+      "family": "meta",
+      "scoringPolarity": "deduction"
+    },
+    {
+      "id": "X15",
+      "name": "Unvalidated length from an untrusted reader",
+      "lens": "securityCompliance",
+      "evaluator": "tool",
+      "whatItMeasures": "Whether a length read out of the stream being parsed is bounded before it is allocated or read \u2014 an unchecked count taken from the input lets the input choose the allocation.",
+      "family": "meta",
+      "scoringPolarity": "deduction"
+    },
+    {
+      "id": "X16",
+      "name": "Unfloored truncation loop",
+      "lens": "codeHealth",
+      "evaluator": "tool",
+      "whatItMeasures": "Whether a loop that shortens a string until it fits a length budget has a floor \u2014 one with none grinds the value down to the empty string, or past it into a negative-length \u0060Substring\u0060.",
+      "family": "meta",
+      "scoringPolarity": "deduction"
+    },
+    {
+      "id": "X17",
+      "name": "Uncapped recursion over a caller-supplied document",
+      "lens": "securityCompliance",
+      "evaluator": "tool",
+      "whatItMeasures": "Whether a walk that recurses through a JSON/XML tree handed in by its caller bounds how deep it will go \u2014 an uncapped walk lets the document\u0027s nesting choose the stack depth, and the resulting StackOverflowException cannot be caught.",
+      "family": "meta",
+      "scoringPolarity": "deduction"
+    },
+    {
+      "id": "X18",
+      "name": "Disposal-pattern correctness",
+      "lens": "codeHealth",
+      "evaluator": "tool",
+      "whatItMeasures": "Whether a type\u0027s disposal matches what it OWNS \u2014 releasing what it created, leaving alone what it was handed, and not declaring a finalizer for state that has nothing unmanaged to finalize.",
+      "family": "meta",
+      "scoringPolarity": "deduction"
+    },
+    {
+      "id": "X19",
+      "name": "Unrestored process-global state",
+      "lens": "codeHealth",
+      "evaluator": "tool",
+      "whatItMeasures": "Whether a method that temporarily changes state belonging to the whole process \u2014 the working directory, an environment variable \u2014 puts it back on EVERY path: a restore reached only when nothing throws leaks the change to the rest of the process.",
+      "family": "meta",
+      "scoringPolarity": "deduction"
+    },
+    {
+      "id": "X20",
+      "name": "Mistyped argument guard",
+      "lens": "codeHealth",
+      "evaluator": "tool",
+      "whatItMeasures": "Whether an argument guard throws the exception its own condition describes \u2014 a guard that rejects a value for being EMPTY and reports it as \u0060ArgumentNullException\u0060 tells the caller a parameter was null when it provably was not.",
+      "family": "meta",
+      "scoringPolarity": "deduction"
+    },
+    {
+      "id": "X21",
+      "name": "Side-effecting pattern guard",
+      "lens": "codeHealth",
+      "evaluator": "tool",
+      "whatItMeasures": "Whether a \u0060when\u0060 guard is free of side effects \u2014 a guard that increments a counter or assigns while deciding whether its arm matches applies that change during PATTERN MATCHING, on an arm that may not be selected, and skips it entirely when a short-circuit to its left answers first.",
+      "family": "meta",
+      "scoringPolarity": "deduction"
+    },
+    {
+      "id": "X22",
+      "name": "Contradicted release guard",
+      "lens": "codeHealth",
+      "evaluator": "tool",
+      "whatItMeasures": "Whether a method that TAKES a lock or semaphore and gives it back from a flag-guarded \u0060finally\u0060 returns the value that flag implies \u2014 reporting success while the guard hands the primitive back admits a second caller the exclusion was there to keep out, and reporting failure while the guard keeps it leaves nothing to ever give it back.",
+      "family": "meta",
+      "scoringPolarity": "deduction"
+    },
+    {
+      "id": "X23",
+      "name": "Unguarded diagnostic materialisation",
+      "lens": "codeHealth",
+      "evaluator": "tool",
+      "whatItMeasures": "Whether the work a diagnostic log line costs is paid only when that line is wanted \u2014 C# evaluates a call\u0027s arguments BEFORE the call, so a trace/debug message joined or projected out of a collection is built in full on every pass, and then discarded by a sink the shipped configuration leaves switched off.",
+      "family": "meta",
+      "scoringPolarity": "deduction"
+    },
+    {
+      "id": "X24",
+      "name": "Document value interpolated into markup unescaped",
+      "lens": "securityCompliance",
+      "evaluator": "tool",
+      "whatItMeasures": "Whether text read out of the document being converted is escaped before it is written into generated markup \u2014 a value the document\u0027s author chose, interpolated into an attribute the surrounding literal delimits, can close that attribute and open another.",
+      "family": "meta",
+      "scoringPolarity": "deduction"
+    },
+    {
+      "id": "X25",
+      "name": "Inert configuration knob",
+      "lens": "codeHealth",
+      "evaluator": "tool",
+      "whatItMeasures": "Whether a value the caller is invited to supply is the value the type actually uses \u2014 a constructor parameter stored in a private field that nothing ever reads while the default it was given is spelled out a second time at the site that should have read it, a keyed lookup that falls back to a different setting than the one its key names while the same type falls back to the matching one for that same key, or a culture-sensitive parse given no format provider by a type that feeds its own settable culture to the same kind of parse elsewhere. Either way, every caller who supplies a value silently gets something else.",
+      "family": "meta",
+      "scoringPolarity": "deduction"
+    },
+    {
+      "id": "X26",
+      "name": "Unsynchronised callback handoff",
+      "lens": "codeHealth",
+      "evaluator": "tool",
+      "whatItMeasures": "Whether a value handed from a callback to the body that waits on it crosses on something built to be crossed \u2014 a \u0060Queue\u003CT\u003E\u0060/\u0060List\u003CT\u003E\u0060/\u0060Dictionary\u003CK,V\u003E\u0060 written inside an event handler and read back outside it is mutated by two flows at once, and the semaphore or completion source beside it orders how MANY items exist while leaving the collection\u0027s own head, tail and backing array unprotected.",
+      "family": "meta",
+      "scoringPolarity": "deduction"
+    },
+    {
+      "id": "X27",
+      "name": "Collection changed while being enumerated",
+      "lens": "codeHealth",
+      "evaluator": "tool",
+      "whatItMeasures": "Whether a \u0060foreach\u0060 leaves the collection it is walking alone \u2014 a body that adds to or removes from the very collection the loop is enumerating invalidates the enumerator it is holding, so the next \u0060MoveNext\u0060 throws \u0060InvalidOperationException\u0060 and the remaining items are never seen.",
+      "family": "meta",
+      "scoringPolarity": "deduction"
+    },
+    {
+      "id": "X28",
+      "name": "Index access outside its own emptiness guard",
+      "lens": "codeHealth",
+      "evaluator": "tool",
+      "whatItMeasures": "Whether a condition that tests a value for emptiness indexes that same value only where the test holds \u2014 an \u0060||\u0060 written one parenthesis too far to the left leaves an index access outside the guard beside it, so the empty case the guard exists to anticipate reaches the index and throws instead.",
+      "family": "meta",
+      "scoringPolarity": "deduction"
+    },
+    {
+      "id": "X29",
+      "name": "Per-element action decided by a fixed element",
+      "lens": "codeHealth",
+      "evaluator": "tool",
+      "whatItMeasures": "Whether a decision taken once per element is taken ABOUT that element \u2014 a test inside a counted loop that reads a fixed subscript of the very collection its guarded statement indexes by the loop variable applies element zero\u0027s answer to all of them, so the elements that differ from it are all handled wrongly, and in the same direction.",
+      "family": "meta",
+      "scoringPolarity": "deduction"
+    },
+    {
+      "id": "X30",
+      "name": "Support guard that admits what it rejects",
+      "lens": "codeHealth",
+      "evaluator": "tool",
+      "whatItMeasures": "Whether a guard written as a NEGATED \u0060||\u0060 says what its author meant \u2014 \u0060!(a || b || x != k)\u0060 is \u0060!a \u0026\u0026 !b \u0026\u0026 x == k\u0060 by De Morgan, so a bail-out that mixes capabilities the code needs with a fault it refuses turns inside out: it fires only where the capabilities are ABSENT, and lets every value the fault term names walk straight into the body that cannot handle it.",
+      "family": "meta",
+      "scoringPolarity": "deduction"
+    },
+    {
+      "id": "X31",
+      "name": "Test-only surface in a production module",
+      "lens": "codeHealth",
+      "evaluator": "tool",
+      "whatItMeasures": "Whether a production module publishes functions that exist only for its tests \u2014 Erlang has no visibility below \u0060-export\u0060, so a test helper exported unconditionally becomes part of the module\u0027s contract for every caller in the system, and the \u0060-ifdef(TEST)\u0060 idiom that would keep it out of the shipped module is not used.",
+      "family": "meta",
+      "scoringPolarity": "deduction"
+    },
+    {
+      "id": "X32",
+      "name": "Type resolved by simple name across every loaded assembly",
+      "lens": "codeHealth",
+      "evaluator": "tool",
+      "whatItMeasures": "Whether a plugin lookup names the type it means \u2014 searching every assembly loaded into the process for a candidate whose SIMPLE name equals a string supplied at runtime, and taking the first one found, is decided by assembly LOAD ORDER rather than by this source, so the same name can resolve to a different type on the next run.",
+      "family": "meta",
+      "scoringPolarity": "deduction"
+    }
+  ],
+  "scoring": {
+    "withinLensQ": 0.75,
+    "acrossLensQ": 0.55,
+    "criticalGate": 4,
+    "architectureSurface": {
+      "minProjects": 2,
+      "minProductionLoc": 1500,
+      "lowSurfaceCap": 69
+    },
+    "bands": {
+      "exemplary": 90,
+      "healthy": 70,
+      "fair": 50,
+      "poor": 25
+    },
+    "qualityBar": {
+      "offsets": {
+        "prototype": -18,
+        "preview": -8,
+        "production": 0,
+        "mission-critical": 6
+      },
+      "lensGroupFactors": {
+        "foundational": 0.4,
+        "operational": 1,
+        "safety": 0.25,
+        "default": 0.7
+      },
+      "exemplaryCeiling": 98,
+      "poorFloor": 5
+    }
+  }
+}

@@ -1,0 +1,89 @@
+{
+ "source": "oracle: cai score (published CLI), 2026-10-07",
+ "evidence": {
+  "rubricVersion": "rubric-2026.10.2",
+  "commit": "abc",
+  "analyzableProjects": 3,
+  "productionLoc": 5000,
+  "dimensions": [
+   {
+    "id": "D1",
+    "category": "code-quality",
+    "score": 9.8,
+    "confidence": 1.0
+   },
+   {
+    "id": "D17",
+    "category": "explicit-debt",
+    "score": 3.0,
+    "confidence": 1.0
+   },
+   {
+    "id": "D5",
+    "category": "architecture",
+    "score": 9.8,
+    "confidence": 1.0
+   },
+   {
+    "id": "D15",
+    "category": "git-mining",
+    "score": 9.8,
+    "confidence": 1.0
+   },
+   {
+    "id": "D9",
+    "category": "testing",
+    "score": 9.8,
+    "confidence": 1.0
+   },
+   {
+    "id": "D28",
+    "category": "security-compliance",
+    "score": 9.8,
+    "confidence": 1.0
+   }
+  ],
+  "metaDimensions": []
+ },
+ "expected": {
+  "cai": 79.6,
+  "band": "Adequate",
+  "lenses": {
+   "codeHealth": {
+    "score": 59.1,
+    "band": "Adequate",
+    "gated": true,
+    "items": 2,
+    "weight": 0.474
+   },
+   "architecture": {
+    "score": 98.0,
+    "band": "Exemplary",
+    "gated": false,
+    "items": 1,
+    "weight": 0.261
+   },
+   "maturity": {
+    "score": 98.0,
+    "band": "Exemplary",
+    "gated": false,
+    "items": 1,
+    "weight": 0.143
+   },
+   "productionReadiness": {
+    "score": 98.0,
+    "band": "Exemplary",
+    "gated": false,
+    "items": 1,
+    "weight": 0.079
+   },
+   "securityCompliance": {
+    "score": 98.0,
+    "band": "Exemplary",
+    "gated": false,
+    "items": 1,
+    "weight": 0.043
+   }
+  }
+ }
+}

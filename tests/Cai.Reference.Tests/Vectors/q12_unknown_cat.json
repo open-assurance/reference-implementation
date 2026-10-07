@@ -1,0 +1,26 @@
+{
+ "source": "oracle: cai score (published CLI), 2026-10-07",
+ "evidence": {
+  "rubricVersion": "rubric-2026.10.2",
+  "commit": "abc",
+  "analyzableProjects": 3,
+  "productionLoc": 5000,
+  "dimensions": [
+   {
+    "id": "D1",
+    "category": "code-quality",
+    "score": 8.0,
+    "confidence": 1.0
+   },
+   {
+    "id": "Z9",
+    "category": "nonsense",
+    "score": 2.0,
+    "confidence": 1.0
+   }
+  ],
+  "metaDimensions": []
+ },
+ "expectedError": true,
+ "oracleMessage": "error: Unknown dimension category 'nonsense'. (Parameter 'wire')"
+}

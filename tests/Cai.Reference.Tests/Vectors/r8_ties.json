@@ -1,0 +1,53 @@
+{
+ "source": "oracle: cai score (published CLI), 2026-10-07",
+ "evidence": {
+  "rubricVersion": "rubric-2026.10.2",
+  "analyzableProjects": 3,
+  "productionLoc": 5000,
+  "dimensions": [],
+  "metaDimensions": [
+   {
+    "id": "PF3",
+    "lens": "performance",
+    "score": 6.5
+   },
+   {
+    "id": "AC1",
+    "lens": "accessibility",
+    "score": 6.5
+   },
+   {
+    "id": "X1",
+    "lens": "codeHealth",
+    "score": 6.5
+   }
+  ]
+ },
+ "expected": {
+  "cai": 65.0,
+  "band": "Adequate",
+  "lenses": {
+   "codeHealth": {
+    "score": 65.0,
+    "band": "Adequate",
+    "gated": false,
+    "items": 1,
+    "weight": 0.54
+   },
+   "accessibility": {
+    "score": 65.0,
+    "band": "Adequate",
+    "gated": false,
+    "items": 1,
+    "weight": 0.297
+   },
+   "performance": {
+    "score": 65.0,
+    "band": "Adequate",
+    "gated": false,
+    "items": 1,
+    "weight": 0.163
+   }
+  }
+ }
+}

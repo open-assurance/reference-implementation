@@ -1,0 +1,37 @@
+{
+ "source": "oracle: cai score (published CLI), 2026-10-07",
+ "evidence": {
+  "rubricVersion": "rubric-2026.10.2",
+  "commit": "abc",
+  "analyzableProjects": 1,
+  "productionLoc": 100,
+  "dimensions": [
+   {
+    "id": "D5",
+    "category": "architecture",
+    "score": 9.0,
+    "confidence": 1.0
+   }
+  ],
+  "metaDimensions": [
+   {
+    "id": "AX1",
+    "lens": "architecture",
+    "score": 3.0
+   }
+  ]
+ },
+ "expected": {
+  "cai": 55.7,
+  "band": "Adequate",
+  "lenses": {
+   "architecture": {
+    "score": 55.7,
+    "band": "Adequate",
+    "gated": true,
+    "items": 2,
+    "weight": 1.0
+   }
+  }
+ }
+}

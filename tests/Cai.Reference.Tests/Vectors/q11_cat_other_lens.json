@@ -1,0 +1,20 @@
+{
+ "source": "oracle: cai score (published CLI), 2026-10-07",
+ "evidence": {
+  "rubricVersion": "rubric-2026.10.2",
+  "commit": "abc",
+  "analyzableProjects": 3,
+  "productionLoc": 5000,
+  "dimensions": [
+   {
+    "id": "D1",
+    "category": "docs",
+    "score": 8.0,
+    "confidence": 1.0
+   }
+  ],
+  "metaDimensions": []
+ },
+ "expectedError": true,
+ "oracleMessage": "error: Dimension 'D1' is declared in category 'docs', but rubric 'rubric-2026.10.2' publishes it in 'code-quality'. A dimension's category decides which other dimensions it averages with, so this changes the score: the producer must either measure under the rubric it names, or the re-homing must min"
+}

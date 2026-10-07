@@ -1,0 +1,52 @@
+{
+ "source": "ART \u00a75: 60\u00d70.5398 + 75\u00d70.2969 + 90\u00d70.1633 = 69.35",
+ "evidence": {
+  "rubricVersion": "rubric-2026.10.2",
+  "analyzableProjects": 3,
+  "productionLoc": 5000,
+  "lenses": [
+   {
+    "lens": "codeHealth",
+    "score": 60,
+    "owaWeight": 0
+   },
+   {
+    "lens": "productionReadiness",
+    "score": 75,
+    "owaWeight": 0
+   },
+   {
+    "lens": "accessibility",
+    "score": 90,
+    "owaWeight": 0
+   }
+  ]
+ },
+ "expected": {
+  "cai": 69.35,
+  "band": "Adequate",
+  "lenses": {
+   "codeHealth": {
+    "score": 60.0,
+    "band": null,
+    "gated": false,
+    "items": 0,
+    "weight": null
+   },
+   "productionReadiness": {
+    "score": 75.0,
+    "band": null,
+    "gated": false,
+    "items": 0,
+    "weight": null
+   },
+   "accessibility": {
+    "score": 90.0,
+    "band": null,
+    "gated": false,
+    "items": 0,
+    "weight": null
+   }
+  }
+ }
+}

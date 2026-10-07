@@ -1,0 +1,21 @@
+{
+ "source": "oracle: cai score (published CLI), 2026-10-07",
+ "evidence": {
+  "rubricVersion": "rubric-2026.10.2",
+  "commit": "abc",
+  "analyzableProjects": 3,
+  "productionLoc": 5000,
+  "dimensions": [
+   {
+    "id": "D1",
+    "category": "code-quality",
+    "score": 5.0,
+    "confidence": 1.0,
+    "coverage": 2.0
+   }
+  ],
+  "metaDimensions": []
+ },
+ "expectedError": true,
+ "oracleMessage": "error: Dimension 'D1' coverage 2 is outside 0\u20131. (Parameter 'bundle')"
+}

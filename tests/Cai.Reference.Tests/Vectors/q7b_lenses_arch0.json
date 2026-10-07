@@ -1,0 +1,40 @@
+{
+ "source": "oracle: cai score (published CLI), 2026-10-07",
+ "evidence": {
+  "rubricVersion": "rubric-2026.10.2",
+  "analyzableProjects": 0,
+  "productionLoc": 100,
+  "lenses": [
+   {
+    "lens": "codeHealth",
+    "score": 60,
+    "owaWeight": 0.5
+   },
+   {
+    "lens": "architecture",
+    "score": 95,
+    "owaWeight": 0.5
+   }
+  ]
+ },
+ "expected": {
+  "cai": 77.5,
+  "band": "Strong",
+  "lenses": {
+   "architecture": {
+    "score": 95.0,
+    "band": "Exemplary",
+    "gated": false,
+    "items": 0,
+    "weight": 0.5
+   },
+   "codeHealth": {
+    "score": 60.0,
+    "band": "Adequate",
+    "gated": false,
+    "items": 0,
+    "weight": 0.5
+   }
+  }
+ }
+}

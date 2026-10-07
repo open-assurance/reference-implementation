@@ -1,0 +1,1117 @@
+{
+  "rubricVersion": "rubric-2026.08.15",
+  "lenses": [
+    {
+      "key": "codeHealth",
+      "label": "Code Health"
+    },
+    {
+      "key": "architecture",
+      "label": "Architecture"
+    },
+    {
+      "key": "maturity",
+      "label": "Maturity"
+    },
+    {
+      "key": "productionReadiness",
+      "label": "Readiness"
+    },
+    {
+      "key": "securityCompliance",
+      "label": "Security"
+    },
+    {
+      "key": "domainModelling",
+      "label": "Domain Modelling"
+    },
+    {
+      "key": "eventDriven",
+      "label": "Event-Driven"
+    },
+    {
+      "key": "eventSourcing",
+      "label": "Event Sourcing"
+    },
+    {
+      "key": "accessibility",
+      "label": "Accessibility"
+    },
+    {
+      "key": "performance",
+      "label": "Performance"
+    }
+  ],
+  "dimensions": [
+    {
+      "id": "D1",
+      "name": "Cyclomatic Complexity",
+      "lens": "codeHealth",
+      "evaluator": "tool",
+      "whatItMeasures": "How tangled the control flow is \u2014 methods with many branches are hard to test and change.",
+      "family": "dimension",
+      "ceilingRung": "Prevented",
+      "deepScan": false
+    },
+    {
+      "id": "D2",
+      "name": "Cognitive Complexity",
+      "lens": "codeHealth",
+      "evaluator": "tool",
+      "whatItMeasures": "How hard the code is for a person to follow, beyond raw branching.",
+      "family": "dimension",
+      "ceilingRung": "Prevented",
+      "deepScan": false
+    },
+    {
+      "id": "D3",
+      "name": "God Classes",
+      "lens": "codeHealth",
+      "evaluator": "tool",
+      "whatItMeasures": "Over-large classes that try to do too much (\u0022god classes\u0022).",
+      "family": "dimension",
+      "ceilingRung": "Prevented",
+      "deepScan": false
+    },
+    {
+      "id": "D4",
+      "name": "Code Duplication",
+      "lens": "codeHealth",
+      "evaluator": "tool",
+      "whatItMeasures": "Copy-pasted code that should be shared instead.",
+      "family": "dimension",
+      "ceilingRung": "Verified",
+      "deepScan": false
+    },
+    {
+      "id": "D5",
+      "name": "Coupling",
+      "lens": "architecture",
+      "evaluator": "tool",
+      "whatItMeasures": "Whether volatile projects sit underneath others that depend on them (so their churn ripples upward), and whether project dependencies form cycles. A widely-depended-on but stable shared/kernel project is healthy, not penalised.",
+      "family": "dimension",
+      "ceilingRung": "Prevented",
+      "deepScan": false
+    },
+    {
+      "id": "D6",
+      "name": "Cohesion (LCOM4)",
+      "lens": "architecture",
+      "evaluator": "tool",
+      "whatItMeasures": "Whether a class\u0027s methods are focused on a single responsibility.",
+      "family": "dimension",
+      "ceilingRung": "Verified",
+      "deepScan": false
+    },
+    {
+      "id": "D7",
+      "name": "Architectural Integrity",
+      "lens": "architecture",
+      "evaluator": "tool",
+      "whatItMeasures": "Whether the code respects its intended layering / architecture rules.",
+      "family": "dimension",
+      "ceilingRung": "Prevented",
+      "deepScan": false
+    },
+    {
+      "id": "D8",
+      "name": "Code Coverage",
+      "lens": "productionReadiness",
+      "evaluator": "tool",
+      "whatItMeasures": "How much of the code is actually exercised by tests.",
+      "family": "dimension",
+      "ceilingRung": "Verified",
+      "deepScan": false
+    },
+    {
+      "id": "D9",
+      "name": "Test Distribution",
+      "lens": "productionReadiness",
+      "evaluator": "tool",
+      "whatItMeasures": "Whether the test suite has a healthy mix of unit / integration / end-to-end tests.",
+      "family": "dimension",
+      "ceilingRung": "Documented",
+      "deepScan": false
+    },
+    {
+      "id": "D10",
+      "name": "Test Quality",
+      "lens": "productionReadiness",
+      "evaluator": "tool",
+      "whatItMeasures": "Whether the tests truly assert behaviour rather than just running the code.",
+      "family": "dimension",
+      "ceilingRung": "Prevented",
+      "deepScan": false
+    },
+    {
+      "id": "D11",
+      "name": "Test Reliability",
+      "lens": "productionReadiness",
+      "evaluator": "tool",
+      "whatItMeasures": "Whether the tests pass reliably, with no flakiness.",
+      "family": "dimension",
+      "ceilingRung": "Verified",
+      "deepScan": true
+    },
+    {
+      "id": "D12",
+      "name": "Dependency Hygiene",
+      "lens": "productionReadiness",
+      "evaluator": "tool",
+      "whatItMeasures": "Whether dependencies are current, secure, and not bloated.",
+      "family": "dimension",
+      "ceilingRung": "Verified",
+      "deepScan": false
+    },
+    {
+      "id": "D13",
+      "name": "Secret Scanning",
+      "lens": "productionReadiness",
+      "evaluator": "tool",
+      "whatItMeasures": "Whether any secrets (keys, tokens, passwords) have leaked into the code.",
+      "family": "dimension",
+      "ceilingRung": "Prevented",
+      "deepScan": false
+    },
+    {
+      "id": "D14",
+      "name": "License Compliance",
+      "lens": "productionReadiness",
+      "evaluator": "tool",
+      "whatItMeasures": "Whether the licenses of third-party packages are compatible with your policy.",
+      "family": "dimension",
+      "ceilingRung": "Verified",
+      "deepScan": false
+    },
+    {
+      "id": "D15",
+      "name": "Churn \u00D7 Complexity Hotspots",
+      "lens": "maturity",
+      "evaluator": "tool",
+      "whatItMeasures": "Files that change often and are also complex \u2014 the riskiest hotspots.",
+      "family": "dimension",
+      "ceilingRung": "Documented",
+      "deepScan": false
+    },
+    {
+      "id": "D16",
+      "name": "Bus Factor",
+      "lens": "maturity",
+      "evaluator": "tool",
+      "whatItMeasures": "Whether knowledge is concentrated in too few people (the \u0022bus factor\u0022).",
+      "family": "dimension",
+      "ceilingRung": "Documented",
+      "deepScan": false
+    },
+    {
+      "id": "D17",
+      "name": "Explicit Debt",
+      "lens": "codeHealth",
+      "evaluator": "tool",
+      "whatItMeasures": "Acknowledged debt left in the code \u2014 TODOs, dead code, suppressed warnings.",
+      "family": "dimension",
+      "ceilingRung": "Prevented",
+      "deepScan": false
+    },
+    {
+      "id": "D18",
+      "name": "Solution Shape",
+      "lens": "codeHealth",
+      "evaluator": "tool",
+      "whatItMeasures": "Whether the solution is laid out in a sensible, conventional structure.",
+      "family": "dimension",
+      "ceilingRung": "Documented",
+      "deepScan": false
+    },
+    {
+      "id": "D19",
+      "name": "Documentation Quality",
+      "lens": "maturity",
+      "evaluator": "llm",
+      "whatItMeasures": "Whether the project\u0027s documentation is clear, complete, and useful.",
+      "family": "dimension",
+      "ceilingRung": "Documented",
+      "deepScan": false
+    },
+    {
+      "id": "D20",
+      "name": "ADR Quality",
+      "lens": "maturity",
+      "evaluator": "llm",
+      "whatItMeasures": "Whether architecture decisions are recorded well (context, decision, consequences).",
+      "family": "dimension",
+      "ceilingRung": "Documented",
+      "deepScan": false
+    },
+    {
+      "id": "D21",
+      "name": "Naming Consistency",
+      "lens": "maturity",
+      "evaluator": "llm",
+      "whatItMeasures": "Whether names \u2014 types, methods, variables \u2014 are clear and consistent.",
+      "family": "dimension",
+      "ceilingRung": "Verified",
+      "deepScan": false
+    },
+    {
+      "id": "D22",
+      "name": "Internal API Consistency",
+      "lens": "architecture",
+      "evaluator": "llm",
+      "whatItMeasures": "Whether the internal API surface is consistent and coherent.",
+      "family": "dimension",
+      "ceilingRung": "Verified",
+      "deepScan": false
+    },
+    {
+      "id": "D23",
+      "name": "Boundary Type-Coupling",
+      "lens": "architecture",
+      "evaluator": "tool",
+      "whatItMeasures": "Whether domain types (IDs, enums, value objects) leak across bounded-context boundaries.",
+      "family": "dimension",
+      "ceilingRung": "Verified",
+      "deepScan": false
+    },
+    {
+      "id": "D24",
+      "name": "Comment Value",
+      "lens": "maturity",
+      "evaluator": "llm",
+      "whatItMeasures": "Whether comments are worth it \u2014 explaining WHY (valuable) rather than WHAT (redundant).",
+      "family": "dimension",
+      "ceilingRung": "Documented",
+      "deepScan": false
+    },
+    {
+      "id": "D25",
+      "name": "ADR Conformance",
+      "lens": "maturity",
+      "evaluator": "llm",
+      "whatItMeasures": "Whether the code actually follows the decisions recorded in the project\u0027s ADRs.",
+      "family": "dimension",
+      "ceilingRung": "Verified",
+      "deepScan": false
+    },
+    {
+      "id": "D26",
+      "name": "Project Cohesion",
+      "lens": "architecture",
+      "evaluator": "tool",
+      "whatItMeasures": "Whether each project is a focused, coherent unit rather than an oversized grab-bag.",
+      "family": "dimension",
+      "ceilingRung": "Documented",
+      "deepScan": false
+    },
+    {
+      "id": "D27",
+      "name": "Navigability",
+      "lens": "architecture",
+      "evaluator": "tool",
+      "whatItMeasures": "How far you must trace to follow a call \u2014 low indirection and co-located slices read easier.",
+      "family": "dimension",
+      "ceilingRung": "Documented",
+      "deepScan": false
+    },
+    {
+      "id": "D28",
+      "name": "Secrets (history)",
+      "lens": "securityCompliance",
+      "evaluator": "tool",
+      "whatItMeasures": "Whether any secrets were ever committed \u2014 scanned across the full git history, not just now.",
+      "family": "dimension",
+      "ceilingRung": "Documented",
+      "deepScan": true
+    },
+    {
+      "id": "D29",
+      "name": "Static Analysis (SAST)",
+      "lens": "securityCompliance",
+      "evaluator": "tool",
+      "whatItMeasures": "Real static-analysis (SAST) findings \u2014 likely security bugs in the code, any language.",
+      "family": "dimension",
+      "ceilingRung": "Documented",
+      "deepScan": true
+    },
+    {
+      "id": "D30",
+      "name": "Dependency Vulnerabilities",
+      "lens": "securityCompliance",
+      "evaluator": "tool",
+      "whatItMeasures": "Whether any dependencies have known published vulnerabilities (CVEs), direct or transitive.",
+      "family": "dimension",
+      "ceilingRung": "Documented",
+      "deepScan": true
+    },
+    {
+      "id": "D31",
+      "name": "IaC \u0026 Container Security",
+      "lens": "securityCompliance",
+      "evaluator": "tool",
+      "whatItMeasures": "Whether Dockerfiles / Terraform / Kubernetes config follow security best practices.",
+      "family": "dimension",
+      "ceilingRung": "Documented",
+      "deepScan": true
+    },
+    {
+      "id": "D32",
+      "name": "Data Compliance (PII/GDPR)",
+      "lens": "securityCompliance",
+      "evaluator": "tool",
+      "whatItMeasures": "Likely personal-data (PII / GDPR) handling concerns \u2014 logging or storing data without safeguards.",
+      "family": "dimension",
+      "ceilingRung": "Documented",
+      "deepScan": true
+    },
+    {
+      "id": "D33",
+      "name": "JS/npm Dependency Vulnerabilities",
+      "lens": "securityCompliance",
+      "evaluator": "tool",
+      "whatItMeasures": "Whether JavaScript/npm dependencies have known published vulnerabilities (CVEs) \u2014 the npm ecosystem\u0027s biggest risk.",
+      "family": "dimension",
+      "ceilingRung": "Documented",
+      "deepScan": true
+    },
+    {
+      "id": "D34",
+      "name": "Knowledge Freshness",
+      "lens": "maturity",
+      "evaluator": "tool",
+      "whatItMeasures": "Whether anyone still has living knowledge of each file, or it has been orphaned \u2014 last understood long ago by someone now gone quiet. The sibling of the bus factor: D16 asks who owns it, D34 asks whether anyone still knows it.",
+      "family": "dimension",
+      "ceilingRung": "Documented",
+      "deepScan": false
+    },
+    {
+      "id": "D35",
+      "name": "Change Coupling",
+      "lens": "architecture",
+      "evaluator": "tool",
+      "whatItMeasures": "Whether files that change together actually belong together \u2014 pairs that repeatedly co-change in git history despite having no explicit code dependency, surfacing the hidden/logical coupling (and boundaries in the wrong place) a static scan can\u0027t see.",
+      "family": "dimension",
+      "ceilingRung": "Documented",
+      "deepScan": false
+    },
+    {
+      "id": "D36",
+      "name": "Supply-chain Provenance \u0026 Signing",
+      "lens": "securityCompliance",
+      "evaluator": "tool",
+      "whatItMeasures": "Whether the build pipeline provides supply-chain integrity \u2014 generated provenance/attestation, signed artifacts (cosign/sigstore), an SBOM, and pinned build actions. Presence of the configuration, not a runtime guarantee.",
+      "family": "dimension",
+      "ceilingRung": "Documented",
+      "deepScan": true
+    },
+    {
+      "id": "D37",
+      "name": "Vulnerability-disclosure Policy",
+      "lens": "securityCompliance",
+      "evaluator": "tool",
+      "whatItMeasures": "Whether the repository publishes a coordinated-vulnerability-disclosure policy (SECURITY.md or security.txt) with a reporting contact, so finders know how to report a vulnerability. Presence of a policy file with a contact, not whether the policy is adequate or honoured.",
+      "family": "dimension",
+      "ceilingRung": "Documented",
+      "deepScan": true
+    },
+    {
+      "id": "D38",
+      "name": "OSV Dependency Vulnerabilities",
+      "lens": "securityCompliance",
+      "evaluator": "tool",
+      "whatItMeasures": "Whether dependencies have known published vulnerabilities (CVEs) per the OSV database \u2014 npm and other lockfile ecosystems, parsed natively. Complements D33 (npm via trivy) and D30 (.NET via dotnet).",
+      "family": "dimension",
+      "ceilingRung": "Documented",
+      "deepScan": true
+    },
+    {
+      "id": "D39",
+      "name": "IL Efficiency",
+      "lens": "codeHealth",
+      "evaluator": "tool",
+      "whatItMeasures": "IL Efficiency",
+      "family": "dimension",
+      "ceilingRung": "Verified",
+      "deepScan": true
+    },
+    {
+      "id": "AC1",
+      "name": "Text alternatives",
+      "lens": "accessibility",
+      "evaluator": "tool",
+      "whatItMeasures": "Whether non-text content carries a text alternative \u2014 img/area/input[type=image] have alt, a meaningful svg has a title or aria-label, video has a captions track, and object/embed/canvas have a name or fallback content. Static markup readiness, not a WCAG conformance claim.",
+      "family": "meta"
+    },
+    {
+      "id": "AC2",
+      "name": "Forms \u0026 labels",
+      "lens": "accessibility",
+      "evaluator": "tool",
+      "whatItMeasures": "Whether form controls have a programmatic label (an associated label, aria-label or aria-labelledby), buttons have text, links have an accessible name, fieldsets have a non-empty legend, known UI-library field components carry a label prop, and a placeholder isn\u0027t used as the only label. Static markup readiness, not a WCAG conformance claim.",
+      "family": "meta"
+    },
+    {
+      "id": "AC3",
+      "name": "Page structure",
+      "lens": "accessibility",
+      "evaluator": "tool",
+      "whatItMeasures": "Whether pages declare a language (well-formed BCP-47) and a non-empty title, expose exactly one main landmark and a sane heading order with non-empty headings, keep zoom enabled, title their iframes, give data tables header cells, and avoid meta-refresh. Static markup readiness, not a WCAG conformance claim.",
+      "family": "meta"
+    },
+    {
+      "id": "AC4",
+      "name": "Keyboard semantics",
+      "lens": "accessibility",
+      "evaluator": "tool",
+      "whatItMeasures": "Whether interactive behaviour is keyboard-reachable \u2014 no click handler on a non-interactive element lacking a role, tabindex and key handler, no positive tabindex, no href-less anchor, no placeholder-href (#/javascript) link acting as a button. Static markup readiness, not a WCAG conformance claim.",
+      "family": "meta"
+    },
+    {
+      "id": "AC5",
+      "name": "ARIA correctness",
+      "lens": "accessibility",
+      "evaluator": "tool",
+      "whatItMeasures": "Whether ARIA is used correctly \u2014 valid non-abstract roles, the ARIA state a role requires, valid (non-misspelled) aria-* attribute names, in-enum values for token-typed aria-* attributes, and no aria-hidden on (or wrapping) a focusable element. Static markup readiness, not a WCAG conformance claim.",
+      "family": "meta"
+    },
+    {
+      "id": "AC6",
+      "name": "Visual \u0026 motion safety",
+      "lens": "accessibility",
+      "evaluator": "tool",
+      "whatItMeasures": "Whether focus outlines aren\u0027t removed without a replacement, motion respects prefers-reduced-motion, and literal CSS colour pairs meet contrast \u2014 PARTIAL: inline styles, in-repo \u003Cstyle\u003E blocks, in-repo .css files, var() tokens, Tailwind neutral utilities and CSS-in-JS literals are read (hex/rgb/hsl/named), never computed/runtime/external-CDN colour. Static markup readiness, not a WCAG conformance claim.",
+      "family": "meta"
+    },
+    {
+      "id": "AC7",
+      "name": "A11y enforcement",
+      "lens": "accessibility",
+      "evaluator": "tool",
+      "whatItMeasures": "Whether accessibility is ENFORCED in the toolchain \u2014 an a11y linter (eslint-plugin-jsx-a11y / vuejs-accessibility) configured, and axe/pa11y/Lighthouse wired into tests or CI \u2014 on the Documented\u2192Verified\u2192Prevented ladder.",
+      "family": "meta"
+    },
+    {
+      "id": "AX1",
+      "name": "Captive dependencies",
+      "lens": "architecture",
+      "evaluator": "tool",
+      "whatItMeasures": "Whether any singleton service captures a scoped/transient dependency \u2014 a silent lifetime/threading bug.",
+      "family": "meta"
+    },
+    {
+      "id": "AX2",
+      "name": "Stateful singletons",
+      "lens": "architecture",
+      "evaluator": "tool",
+      "whatItMeasures": "Whether singleton services avoid mutable shared instance state that concurrent callers would race on.",
+      "family": "meta"
+    },
+    {
+      "id": "AX3",
+      "name": "Project dependency cycles",
+      "lens": "architecture",
+      "evaluator": "tool",
+      "whatItMeasures": "Whether the project-reference graph is acyclic (cycles block independent build/deploy and signal eroding boundaries).",
+      "family": "meta"
+    },
+    {
+      "id": "AX4",
+      "name": "Dependency direction",
+      "lens": "architecture",
+      "evaluator": "tool",
+      "whatItMeasures": "Whether dependencies point inward (Domain \u2190 Application \u2190 Infrastructure/Web) \u2014 the clean-architecture dependency rule, checked across the project graph.",
+      "family": "meta"
+    },
+    {
+      "id": "AX5",
+      "name": "Architecture \u0026 structure",
+      "lens": "architecture",
+      "evaluator": "tool",
+      "whatItMeasures": "Whether the codebase has a recognisable, scale-appropriate structure (a named architectural style, or modular enough for its size) rather than being an ad-hoc ball of mud.",
+      "family": "meta"
+    },
+    {
+      "id": "AX6",
+      "name": "Interface segregation",
+      "lens": "architecture",
+      "evaluator": "tool",
+      "whatItMeasures": "Whether interfaces stay focused rather than fat \u2014 the Interface-Segregation principle (SOLID \u0027I\u0027).",
+      "family": "meta"
+    },
+    {
+      "id": "AX7",
+      "name": "Slice cohesion",
+      "lens": "architecture",
+      "evaluator": "tool",
+      "whatItMeasures": "Whether feature slices stay independent (no direct cross-slice references) \u2014 the discipline that makes vertical-slice architecture pay off.",
+      "family": "meta"
+    },
+    {
+      "id": "AX8",
+      "name": "Test isolation",
+      "lens": "architecture",
+      "evaluator": "tool",
+      "whatItMeasures": "Whether production projects stay free of references to test projects \u2014 tests may depend on production, never the reverse.",
+      "family": "meta"
+    },
+    {
+      "id": "AX9",
+      "name": "CQS / query purity",
+      "lens": "architecture",
+      "evaluator": "tool",
+      "whatItMeasures": "Whether read (query) handlers stay side-effect-free \u2014 a query that writes persistent state or raises events breaks CQS and makes reads unsafe to retry, cache, or route to a read replica.",
+      "family": "meta"
+    },
+    {
+      "id": "AX10",
+      "name": "Code composition",
+      "lens": "architecture",
+      "evaluator": "tool",
+      "whatItMeasures": "How the codebase splits by code ROLE \u2014 domain, application, infrastructure, test, generated. The significance map behind the knowledge/coupling weighting, and a DDD signal in its own right: a thin domain core under fat infrastructure is the anemic-domain smell, quantified.",
+      "family": "meta"
+    },
+    {
+      "id": "C1",
+      "name": "Data Protection",
+      "lens": "securityCompliance",
+      "evaluator": "tool",
+      "whatItMeasures": "Whether sensitive data is encrypted at rest and in transit and keys are vaulted.",
+      "family": "meta"
+    },
+    {
+      "id": "C2",
+      "name": "Access Controls",
+      "lens": "securityCompliance",
+      "evaluator": "tool",
+      "whatItMeasures": "Whether access is authorized by default \u2014 [Authorize]/policies or imperative guard methods (throw-on-violation) called from handlers.",
+      "family": "meta"
+    },
+    {
+      "id": "C3",
+      "name": "Audit Trail",
+      "lens": "securityCompliance",
+      "evaluator": "tool",
+      "whatItMeasures": "Whether changes to sensitive data are recorded (who, what, when) for compliance \u002B incident response.",
+      "family": "meta"
+    },
+    {
+      "id": "C4",
+      "name": "Data Retention",
+      "lens": "securityCompliance",
+      "evaluator": "tool",
+      "whatItMeasures": "Whether data has a defined lifetime \u2014 retention periods, TTLs, cleanup jobs (storage limitation).",
+      "family": "meta"
+    },
+    {
+      "id": "C5",
+      "name": "Data-Subject Rights",
+      "lens": "securityCompliance",
+      "evaluator": "tool",
+      "whatItMeasures": "Whether GDPR data-subject requests are supported in code \u2014 erasure, export/portability, consent.",
+      "family": "meta"
+    },
+    {
+      "id": "DM1",
+      "name": "Aggregate boundaries",
+      "lens": "domainModelling",
+      "evaluator": "tool",
+      "whatItMeasures": "Whether aggregates reference each other by identity (id) rather than by direct object reference \u2014 the core DDD consistency-boundary rule.",
+      "family": "meta"
+    },
+    {
+      "id": "DM2",
+      "name": "Strongly-typed ids",
+      "lens": "domainModelling",
+      "evaluator": "tool",
+      "whatItMeasures": "How much of the domain uses strongly-typed ids vs raw Guid/string/int \u2014 adoption curve, not all-or-nothing.",
+      "family": "meta"
+    },
+    {
+      "id": "DM3",
+      "name": "Integration-event coupling",
+      "lens": "domainModelling",
+      "evaluator": "tool",
+      "whatItMeasures": "Whether cross-context integration events stay loosely coupled \u2014 no producer-owned enums/domain types leaking to consumers. Shared-kernel/contracts types are allowed.",
+      "family": "meta"
+    },
+    {
+      "id": "DM4",
+      "name": "Rich vs anemic model",
+      "lens": "domainModelling",
+      "evaluator": "tool",
+      "whatItMeasures": "Whether aggregates/entities carry the behaviour that protects their invariants, rather than being data bags driven by external services.",
+      "family": "meta"
+    },
+    {
+      "id": "DM5",
+      "name": "Encapsulated state",
+      "lens": "domainModelling",
+      "evaluator": "tool",
+      "whatItMeasures": "Whether entities protect their state (private/init-only setters) instead of exposing public setters that bypass invariants. Softened when a rehydration framework (Marten/EF) is present.",
+      "family": "meta"
+    },
+    {
+      "id": "DM6",
+      "name": "Domain \u2194 infrastructure boundary",
+      "lens": "domainModelling",
+      "evaluator": "tool",
+      "whatItMeasures": "Whether the domain layer stays free of infrastructure dependencies (EF/Marten/HTTP/ASP.NET) \u2014 the clean-architecture dependency rule.",
+      "family": "meta"
+    },
+    {
+      "id": "DM7",
+      "name": "Repository granularity",
+      "lens": "domainModelling",
+      "evaluator": "tool",
+      "whatItMeasures": "Whether repositories are per aggregate root (not per child entity) so the root\u0027s invariants can\u0027t be bypassed.",
+      "family": "meta"
+    },
+    {
+      "id": "DM8",
+      "name": "Value-object opportunities",
+      "lens": "domainModelling",
+      "evaluator": "llm",
+      "whatItMeasures": "Whether clusters of primitives that travel together (a missing value object) are extracted \u2014 a low-weight suggestion, LLM-confirmed when configured.",
+      "family": "meta"
+    },
+    {
+      "id": "ED1",
+      "name": "Handler temporal coupling",
+      "lens": "eventDriven",
+      "evaluator": "tool",
+      "whatItMeasures": "Whether event handlers stay asynchronous (no blocking remote HTTP/gRPC calls awaited inside a handler).",
+      "family": "meta"
+    },
+    {
+      "id": "ED2",
+      "name": "Event/command shape",
+      "lens": "eventDriven",
+      "evaluator": "tool",
+      "whatItMeasures": "Whether commands have a single handler (one owner of the decision) and fan-out is modelled with events.",
+      "family": "meta"
+    },
+    {
+      "id": "ED3",
+      "name": "Event naming",
+      "lens": "eventDriven",
+      "evaluator": "tool",
+      "whatItMeasures": "Whether events are named in the past tense (a clarity nudge \u2014 low weight).",
+      "family": "meta"
+    },
+    {
+      "id": "ED4",
+      "name": "Outbox / dual-write",
+      "lens": "eventDriven",
+      "evaluator": "tool",
+      "whatItMeasures": "Whether state changes and message publishes are atomic (a transactional outbox) rather than a crash-unsafe dual write.",
+      "family": "meta"
+    },
+    {
+      "id": "ED5",
+      "name": "Idempotency",
+      "lens": "productionReadiness",
+      "evaluator": "llm",
+      "whatItMeasures": "Whether retry-prone mutations (command handlers \u002B message/event consumers) are idempotent so an at-least-once redelivery or client retry doesn\u0027t double-apply the effect \u2014 heuristic at-risk detection confirmed by language model, advisory.",
+      "family": "meta"
+    },
+    {
+      "id": "ES1",
+      "name": "Fold determinism",
+      "lens": "eventSourcing",
+      "evaluator": "tool",
+      "whatItMeasures": "Whether Apply/When folds reconstruct state purely from the event (no DateTime.Now, Guid.NewGuid, Random or IO) so replay is reproducible.",
+      "family": "meta"
+    },
+    {
+      "id": "ES2",
+      "name": "Immutable events",
+      "lens": "eventSourcing",
+      "evaluator": "tool",
+      "whatItMeasures": "Whether persisted events are immutable facts (init-only/readonly) \u2014 a settable event member lets stored history be rewritten.",
+      "family": "meta"
+    },
+    {
+      "id": "ES3",
+      "name": "PII in the event store",
+      "lens": "eventSourcing",
+      "evaluator": "llm",
+      "whatItMeasures": "Whether the append-only event log avoids un-erasable personal data (or has a crypto-shredding strategy) \u2014 a GDPR right-to-erasure risk.",
+      "family": "meta"
+    },
+    {
+      "id": "GD1",
+      "name": "Unfinished \u0026 placeholder code",
+      "lens": "codeHealth",
+      "evaluator": "tool",
+      "whatItMeasures": "Unreviewed-generation residue: shipped members still throwing NotImplementedException, and placeholder string literals left in non-test, non-generated code. Scored as a quality signature, never as a claim about authorship.",
+      "family": "meta"
+    },
+    {
+      "id": "IC1",
+      "name": "Incompleteness \u0026 stubs",
+      "lens": "codeHealth",
+      "evaluator": "tool",
+      "whatItMeasures": "Unfinished work detected by code SHAPE, not keywords: members that only throw a \u0022not implemented\u0022 exception, methods that take inputs and return a constant, async methods that never await, dead \u0060if (false)\u0060 / \u0060#if false\u0060 branches, and skeleton types most of whose members are holes. A real, objective slice of technical debt.",
+      "family": "meta"
+    },
+    {
+      "id": "LA1",
+      "name": "Personal-Data Handling (GDPR)",
+      "lens": "securityCompliance",
+      "evaluator": "llm",
+      "whatItMeasures": "LLM-confirmed personal-data handling surface \u2014 fields that are genuine personal data about a real person (not fiction/test/config), surfaced for the GDPR Art. 25/32 self-assessment. Advisory.",
+      "family": "meta"
+    },
+    {
+      "id": "LA2",
+      "name": "Alt-Text Quality (WCAG 1.1.1)",
+      "lens": "accessibility",
+      "evaluator": "llm",
+      "whatItMeasures": "LLM-judged quality of image alt text \u2014 whether each alt is a meaningful equivalent rather than a filename, generic word or placeholder. Advisory; complements the deterministic \u0027alt present?\u0027 check.",
+      "family": "meta"
+    },
+    {
+      "id": "LA3",
+      "name": "Vulnerability-Disclosure Policy",
+      "lens": "securityCompliance",
+      "evaluator": "llm",
+      "whatItMeasures": "LLM-judged whether a SECURITY.md / security.txt is a real coordinated vulnerability-disclosure policy (contact \u002B how to report \u002B handling), not just a stub. Advisory.",
+      "family": "meta"
+    },
+    {
+      "id": "LA4",
+      "name": "Dev/Test/Prod Separation",
+      "lens": "securityCompliance",
+      "evaluator": "llm",
+      "whatItMeasures": "LLM-judged whether configuration separates development/test/production (distinct per-environment settings) rather than commingling them. Advisory.",
+      "family": "meta"
+    },
+    {
+      "id": "LA5",
+      "name": "Link \u0026 Button Text Quality (WCAG 2.4.4)",
+      "lens": "accessibility",
+      "evaluator": "llm",
+      "whatItMeasures": "LLM-judged descriptiveness of link/button text \u2014 whether each conveys its purpose out of context rather than a vague \u0027click here\u0027/\u0027read more\u0027. Advisory; complements the deterministic \u0027has a name?\u0027 check.",
+      "family": "meta"
+    },
+    {
+      "id": "LA6",
+      "name": "Heading \u0026 Label Text Quality (WCAG 2.4.6)",
+      "lens": "accessibility",
+      "evaluator": "llm",
+      "whatItMeasures": "LLM-judged descriptiveness of heading/label text \u2014 whether each meaningfully describes its section or field rather than a placeholder (\u0027Heading\u0027, \u0027Untitled\u0027, \u0027Label\u0027). Advisory.",
+      "family": "meta"
+    },
+    {
+      "id": "M1",
+      "name": "Documentation (README)",
+      "lens": "maturity",
+      "evaluator": "tool",
+      "whatItMeasures": "Whether the repo and its projects have a README, and whether it\u0027s substantive and current.",
+      "family": "meta"
+    },
+    {
+      "id": "M2",
+      "name": "Architecture documentation",
+      "lens": "maturity",
+      "evaluator": "tool",
+      "whatItMeasures": "Whether key decisions (ADRs) and the high-level shape (C4/diagrams) are written down.",
+      "family": "meta"
+    },
+    {
+      "id": "M3",
+      "name": "Folder \u0026 project structure",
+      "lens": "maturity",
+      "evaluator": "tool",
+      "whatItMeasures": "Whether the repo is organised deliberately \u2014 src/test separation and consistent project naming.",
+      "family": "meta"
+    },
+    {
+      "id": "M4",
+      "name": "Documentation accuracy",
+      "lens": "maturity",
+      "evaluator": "llm",
+      "whatItMeasures": "Whether the README actually describes the code that exists (LLM-judged, advisory).",
+      "family": "meta"
+    },
+    {
+      "id": "P1",
+      "name": "CI/CD gates",
+      "lens": "productionReadiness",
+      "evaluator": "tool",
+      "whatItMeasures": "Whether an automated pipeline builds and tests every change.",
+      "family": "meta"
+    },
+    {
+      "id": "P2",
+      "name": "Observability",
+      "lens": "productionReadiness",
+      "evaluator": "tool",
+      "whatItMeasures": "Whether the code is diagnosable in production \u2014 structured logging, tracing/metrics, health checks.",
+      "family": "meta"
+    },
+    {
+      "id": "P3",
+      "name": "Security \u0026 performance tooling",
+      "lens": "productionReadiness",
+      "evaluator": "tool",
+      "whatItMeasures": "Whether SAST, secret/dependency scanning and performance benchmarking are wired in (presence, not runtime).",
+      "family": "meta"
+    },
+    {
+      "id": "P4",
+      "name": "Deployment \u0026 Rollback",
+      "lens": "productionReadiness",
+      "evaluator": "tool",
+      "whatItMeasures": "Whether releases are automated and safely reversible (probes, rolling updates, approval gates) \u2014 from manifests/pipeline files, not the live environment.",
+      "family": "meta"
+    },
+    {
+      "id": "P5",
+      "name": "DR \u0026 Backup",
+      "lens": "productionReadiness",
+      "evaluator": "tool",
+      "whatItMeasures": "Whether disaster recovery is planned and codified \u2014 backups, geo-recovery, RTO/RPO, persistence guarantees \u2014 from IaC \u002B container manifests \u002B docs, never the live cloud.",
+      "family": "meta"
+    },
+    {
+      "id": "P6",
+      "name": "Release Hygiene",
+      "lens": "productionReadiness",
+      "evaluator": "tool",
+      "whatItMeasures": "Whether releases are traceable \u2014 a maintained changelog and explicit version stamping.",
+      "family": "meta"
+    },
+    {
+      "id": "P7",
+      "name": "Outbound HTTP resilience",
+      "lens": "productionReadiness",
+      "evaluator": "tool",
+      "whatItMeasures": "Whether outbound HTTP calls are wrapped in resilience (retry/timeout/circuit-breaker) so a failing dependency doesn\u0027t cascade.",
+      "family": "meta"
+    },
+    {
+      "id": "P8",
+      "name": "Schema migrations",
+      "lens": "productionReadiness",
+      "evaluator": "tool",
+      "whatItMeasures": "Whether EF Core schema changes go through versioned migrations rather than the un-evolvable EnsureCreated().",
+      "family": "meta"
+    },
+    {
+      "id": "P9",
+      "name": "Domain vs controller coverage",
+      "lens": "productionReadiness",
+      "evaluator": "tool",
+      "whatItMeasures": "Whether test coverage concentrates on the domain (business rules) rather than the trivial web/controller layer \u2014 a focus check a generic tool can\u0027t make.",
+      "family": "meta"
+    },
+    {
+      "id": "P10",
+      "name": "Library API \u0026 versioning",
+      "lens": "productionReadiness",
+      "evaluator": "tool",
+      "whatItMeasures": "For a library: a deliberate (small) public API surface and explicit semantic versioning so consumers can depend on it safely.",
+      "family": "meta"
+    },
+    {
+      "id": "P11",
+      "name": "BDD / executable specs",
+      "lens": "productionReadiness",
+      "evaluator": "tool",
+      "whatItMeasures": "Whether behaviour is captured as executable Gherkin specifications (a plus for shared understanding) \u2014 only assessed when a BDD framework is present.",
+      "family": "meta"
+    },
+    {
+      "id": "P12",
+      "name": "CI test-gate honesty",
+      "lens": "productionReadiness",
+      "evaluator": "tool",
+      "whatItMeasures": "Whether the CI gate executes the test inventory it appears to have: excluded suites, skipped tests, and coverage collected without a threshold.",
+      "family": "meta"
+    },
+    {
+      "id": "PF1",
+      "name": "Benchmark discipline",
+      "lens": "performance",
+      "evaluator": "tool",
+      "whatItMeasures": "Whether the library protects its performance with benchmarks \u2014 a BenchmarkDotNet suite, an allocation MemoryDiagnoser, and (ideally) a CI gate. Presence is credited as a bonus, never a deduction.",
+      "family": "meta"
+    },
+    {
+      "id": "PF2",
+      "name": "Allocation hygiene",
+      "lens": "performance",
+      "evaluator": "tool",
+      "whatItMeasures": "Whether the code is written to minimise allocations so it doesn\u0027t pressure its host\u0027s GC \u2014 Span/Memory, pooling (ArrayPool/ObjectPool), stackalloc, ValueTask, value-type structs and buffer writers. Reward-only: credited where present, never penalised where a simpler style is fine.",
+      "family": "meta"
+    },
+    {
+      "id": "PF3",
+      "name": "Async \u0026 latency hygiene",
+      "lens": "performance",
+      "evaluator": "tool",
+      "whatItMeasures": "Whether asynchronous code keeps its host responsive \u2014 a library awaits with ConfigureAwait(false) (so it never captures and stalls the host\u0027s context) and avoids sync-over-async blocking (.Wait()/.GetAwaiter().GetResult()) that wastes threads and risks deadlock.",
+      "family": "meta"
+    },
+    {
+      "id": "R1",
+      "name": "Type Safety",
+      "lens": "codeHealth",
+      "evaluator": "tool",
+      "whatItMeasures": "How much of the frontend is typed TypeScript vs untyped JavaScript.",
+      "family": "meta"
+    },
+    {
+      "id": "R2",
+      "name": "Cyclomatic Complexity",
+      "lens": "codeHealth",
+      "evaluator": "tool",
+      "whatItMeasures": "Per-function cyclomatic/cognitive complexity from the token-level function scanner (D-386) \u2014 real branching, not a regex heuristic.",
+      "family": "meta"
+    },
+    {
+      "id": "R3",
+      "name": "Large Files",
+      "lens": "codeHealth",
+      "evaluator": "tool",
+      "whatItMeasures": "How many components/modules exceed the large-file threshold.",
+      "family": "meta"
+    },
+    {
+      "id": "R4",
+      "name": "Test Coverage",
+      "lens": "productionReadiness",
+      "evaluator": "tool",
+      "whatItMeasures": "Static test reachability (D-386): the share of production files reachable from any test via the import graph \u2014 measured without running anything.",
+      "family": "meta"
+    },
+    {
+      "id": "R5",
+      "name": "Dependency Freshness",
+      "lens": "productionReadiness",
+      "evaluator": "tool",
+      "whatItMeasures": "How outdated the npm dependencies are (a maturity signal). JS/npm CVEs are scored separately in D33 (JS/npm Dependency Vulnerabilities).",
+      "family": "meta"
+    },
+    {
+      "id": "R6",
+      "name": "Tooling",
+      "lens": "productionReadiness",
+      "evaluator": "tool",
+      "whatItMeasures": "Whether the project wires up test, lint and typecheck \u2014 detected from each package.json script\u0027s COMMAND (eslint / tsc / vitest / jest / playwright), not just its name, and corroborated against CI-workflow invocations so a tool run only in CI still counts.",
+      "family": "meta"
+    },
+    {
+      "id": "R7",
+      "name": "Dead Code",
+      "lens": "codeHealth",
+      "evaluator": "tool",
+      "whatItMeasures": "Files unreachable from every application/tooling/test entry point, and exports nothing imports (module-graph reachability, D-386).",
+      "family": "meta"
+    },
+    {
+      "id": "R8",
+      "name": "Dependency Hygiene",
+      "lens": "productionReadiness",
+      "evaluator": "tool",
+      "whatItMeasures": "npm dependency truthfulness (D-386): unused dependencies, imports not declared anywhere, and type-/test-only packages shipped as production deps.",
+      "family": "meta"
+    },
+    {
+      "id": "R9",
+      "name": "Circular Imports",
+      "lens": "architecture",
+      "evaluator": "tool",
+      "whatItMeasures": "Import cycles in the module graph (D-386) \u2014 files that can only be understood and changed together.",
+      "family": "meta"
+    },
+    {
+      "id": "R10",
+      "name": "Code Duplication",
+      "lens": "codeHealth",
+      "evaluator": "tool",
+      "whatItMeasures": "Copy-pasted token-identical blocks across the frontend (the D4 clone algorithm over JS/TS tokens, D-386).",
+      "family": "meta"
+    },
+    {
+      "id": "R11",
+      "name": "Import Boundaries",
+      "lens": "architecture",
+      "evaluator": "tool",
+      "whatItMeasures": "Conformance to the detected frontend architecture layout (feature-sliced / layered src) plus cross-package deep-import rules (D-386).",
+      "family": "meta"
+    },
+    {
+      "id": "S1",
+      "name": "Web-Security Posture",
+      "lens": "securityCompliance",
+      "evaluator": "tool",
+      "whatItMeasures": "Transport security, security headers, secure cookies, input validation, middleware order and crypto hygiene (presence, not runtime).",
+      "family": "meta"
+    },
+    {
+      "id": "X1",
+      "name": "Async correctness",
+      "lens": "codeHealth",
+      "evaluator": "tool",
+      "whatItMeasures": "Whether the code avoids sync-over-async (deadlock-prone blocking on tasks) and async void.",
+      "family": "meta"
+    },
+    {
+      "id": "X2",
+      "name": "Cancellation propagation",
+      "lens": "codeHealth",
+      "evaluator": "tool",
+      "whatItMeasures": "Whether async methods accept a CancellationToken so work can be cancelled (adoption curve).",
+      "family": "meta"
+    },
+    {
+      "id": "X3",
+      "name": "Exception handling",
+      "lens": "codeHealth",
+      "evaluator": "tool",
+      "whatItMeasures": "Whether exceptions are handled rather than silently swallowed or rethrown with lost stack traces.",
+      "family": "meta"
+    },
+    {
+      "id": "X4",
+      "name": "Structured logging",
+      "lens": "codeHealth",
+      "evaluator": "tool",
+      "whatItMeasures": "Whether log calls use message templates (queryable) rather than interpolated strings.",
+      "family": "meta"
+    },
+    {
+      "id": "X5",
+      "name": "Nullable reference types",
+      "lens": "codeHealth",
+      "evaluator": "tool",
+      "whatItMeasures": "Whether nullable reference types are enabled and not undermined by heavy \u0060!\u0060 suppression.",
+      "family": "meta"
+    },
+    {
+      "id": "X6",
+      "name": "Hand-rolled structured-format parsing",
+      "lens": "codeHealth",
+      "evaluator": "tool",
+      "whatItMeasures": "Whether JSON/XML is parsed with regex/string hacks while a real parser is already referenced in the same project \u2014 a classic source of silent data bugs.",
+      "family": "meta"
+    },
+    {
+      "id": "X7",
+      "name": "Silent fallback defaults",
+      "lens": "codeHealth",
+      "evaluator": "tool",
+      "whatItMeasures": "Whether parse/lookup failure paths return hard-coded constants with no logging or throw \u2014 failures that convert data errors into silent behavior changes.",
+      "family": "meta"
+    },
+    {
+      "id": "X8",
+      "name": "JS interop contract",
+      "lens": "codeHealth",
+      "evaluator": "tool",
+      "whatItMeasures": "Whether string-named JS interop bindings resolve against the first-party JavaScript, and whether anything guards the boundary against renames.",
+      "family": "meta"
+    }
+  ]
+}

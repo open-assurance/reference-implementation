@@ -1,0 +1,139 @@
+{
+ "source": "oracle: cai score (published CLI), 2026-10-07",
+ "evidence": {
+  "rubricVersion": "rubric-2026.10.2",
+  "commit": "abc",
+  "analyzableProjects": 3,
+  "productionLoc": 5000,
+  "dimensions": [],
+  "metaDimensions": [
+   {
+    "id": "M1",
+    "lens": "maturity",
+    "score": 9.85
+   },
+   {
+    "id": "P1",
+    "lens": "productionReadiness",
+    "score": 9.85
+   },
+   {
+    "id": "AC1",
+    "lens": "accessibility",
+    "score": 9.85
+   },
+   {
+    "id": "PF3",
+    "lens": "performance",
+    "score": 9.85
+   },
+   {
+    "id": "DM1",
+    "lens": "domainModelling",
+    "score": 9.85
+   },
+   {
+    "id": "ED1",
+    "lens": "eventDriven",
+    "score": 9.85
+   },
+   {
+    "id": "ES1",
+    "lens": "eventSourcing",
+    "score": 9.85
+   },
+   {
+    "id": "X1",
+    "lens": "codeHealth",
+    "score": 9.85
+   },
+   {
+    "id": "AX1",
+    "lens": "architecture",
+    "score": 9.85
+   },
+   {
+    "id": "C1",
+    "lens": "securityCompliance",
+    "score": 9.85
+   }
+  ],
+  "qualityBar": "mission-critical"
+ },
+ "expected": {
+  "cai": 98.5,
+  "band": "Exemplary",
+  "lenses": {
+   "codeHealth": {
+    "score": 98.5,
+    "band": "Exemplary",
+    "gated": false,
+    "items": 1,
+    "weight": 0.451
+   },
+   "architecture": {
+    "score": 98.5,
+    "band": "Exemplary",
+    "gated": false,
+    "items": 1,
+    "weight": 0.248
+   },
+   "maturity": {
+    "score": 98.5,
+    "band": "Exemplary",
+    "gated": false,
+    "items": 1,
+    "weight": 0.136
+   },
+   "productionReadiness": {
+    "score": 98.5,
+    "band": "Exemplary",
+    "gated": false,
+    "items": 1,
+    "weight": 0.075
+   },
+   "securityCompliance": {
+    "score": 98.5,
+    "band": "Exemplary",
+    "gated": false,
+    "items": 1,
+    "weight": 0.041
+   },
+   "domainModelling": {
+    "score": 98.5,
+    "band": "Exemplary",
+    "gated": false,
+    "items": 1,
+    "weight": 0.023
+   },
+   "eventDriven": {
+    "score": 98.5,
+    "band": "Exemplary",
+    "gated": false,
+    "items": 1,
+    "weight": 0.012
+   },
+   "eventSourcing": {
+    "score": 98.5,
+    "band": "Exemplary",
+    "gated": false,
+    "items": 1,
+    "weight": 0.007
+   },
+   "accessibility": {
+    "score": 98.5,
+    "band": "Exemplary",
+    "gated": false,
+    "items": 1,
+    "weight": 0.004
+   },
+   "performance": {
+    "score": 98.5,
+    "band": "Exemplary",
+    "gated": false,
+    "items": 1,
+    "weight": 0.002
+   }
+  }
+ }
+}

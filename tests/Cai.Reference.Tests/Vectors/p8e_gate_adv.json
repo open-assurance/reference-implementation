@@ -1,0 +1,38 @@
+{
+ "source": "oracle: cai score (published CLI), 2026-10-07",
+ "evidence": {
+  "rubricVersion": "rubric-2026.10.2",
+  "commit": "abc",
+  "analyzableProjects": 3,
+  "productionLoc": 5000,
+  "dimensions": [
+   {
+    "id": "D1",
+    "category": "code-quality",
+    "score": 9.5,
+    "confidence": 1.0
+   },
+   {
+    "id": "D3",
+    "category": "code-quality",
+    "score": 3.0,
+    "confidence": 1.0,
+    "advisory": true
+   }
+  ],
+  "metaDimensions": []
+ },
+ "expected": {
+  "cai": 95.0,
+  "band": "Exemplary",
+  "lenses": {
+   "codeHealth": {
+    "score": 95.0,
+    "band": "Exemplary",
+    "gated": false,
+    "items": 1,
+    "weight": 1.0
+   }
+  }
+ }
+}

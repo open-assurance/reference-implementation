@@ -1,0 +1,50 @@
+{
+ "source": "oracle: cai score (published CLI), 2026-10-07",
+ "evidence": {
+  "rubricVersion": "rubric-2026.10.2",
+  "commit": "abc",
+  "analyzableProjects": 3,
+  "productionLoc": 5000,
+  "dimensions": [
+   {
+    "id": "D1",
+    "category": "code-quality",
+    "score": 7.123456,
+    "confidence": 1.0
+   },
+   {
+    "id": "D17",
+    "category": "explicit-debt",
+    "score": 8.987654,
+    "confidence": 1.0
+   },
+   {
+    "id": "D15",
+    "category": "git-mining",
+    "score": 5.5555,
+    "confidence": 1.0
+   }
+  ],
+  "metaDimensions": []
+ },
+ "expected": {
+  "cai": 64.0,
+  "band": "Adequate",
+  "lenses": {
+   "maturity": {
+    "score": 55.6,
+    "band": "Adequate",
+    "gated": false,
+    "items": 1,
+    "weight": 0.645
+   },
+   "codeHealth": {
+    "score": 79.2,
+    "band": "Strong",
+    "gated": false,
+    "items": 2,
+    "weight": 0.355
+   }
+  }
+ }
+}

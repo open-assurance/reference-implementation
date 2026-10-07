@@ -1,0 +1,90 @@
+{
+ "source": "oracle: cai score (published CLI), 2026-10-07",
+ "evidence": {
+  "rubricVersion": "rubric-2026.10.2",
+  "commit": "abc",
+  "analyzableProjects": 3,
+  "productionLoc": 5000,
+  "dimensions": [],
+  "metaDimensions": [
+   {
+    "id": "X1",
+    "lens": "codeHealth",
+    "score": 9.8
+   },
+   {
+    "id": "AX1",
+    "lens": "architecture",
+    "score": 9.8
+   },
+   {
+    "id": "M1",
+    "lens": "maturity",
+    "score": 9.8
+   },
+   {
+    "id": "P1",
+    "lens": "productionReadiness",
+    "score": 9.8
+   },
+   {
+    "id": "C1",
+    "lens": "securityCompliance",
+    "score": 9.8
+   },
+   {
+    "id": "PF3",
+    "lens": "performance",
+    "score": 1.0
+   }
+  ]
+ },
+ "expected": {
+  "cai": 57.3,
+  "band": "Adequate",
+  "lenses": {
+   "codeHealth": {
+    "score": 98.0,
+    "band": "Exemplary",
+    "gated": false,
+    "items": 1,
+    "weight": 0.255
+   },
+   "architecture": {
+    "score": 98.0,
+    "band": "Exemplary",
+    "gated": false,
+    "items": 1,
+    "weight": 0.14
+   },
+   "maturity": {
+    "score": 98.0,
+    "band": "Exemplary",
+    "gated": false,
+    "items": 1,
+    "weight": 0.077
+   },
+   "performance": {
+    "score": 10.0,
+    "band": "Critical",
+    "gated": true,
+    "items": 1,
+    "weight": 0.463
+   },
+   "productionReadiness": {
+    "score": 98.0,
+    "band": "Exemplary",
+    "gated": false,
+    "items": 1,
+    "weight": 0.042
+   },
+   "securityCompliance": {
+    "score": 98.0,
+    "band": "Exemplary",
+    "gated": false,
+    "items": 1,
+    "weight": 0.023
+   }
+  }
+ }
+}

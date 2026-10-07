@@ -1,0 +1,9 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Cai.Reference.Scoring/Cai.Reference.Scoring.csproj" />
+    <Project Path="src/Cai.Reference/Cai.Reference.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Cai.Reference.Tests/Cai.Reference.Tests.csproj" />
+  </Folder>
+</Solution>

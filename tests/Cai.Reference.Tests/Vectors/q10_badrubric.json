@@ -1,0 +1,16 @@
+{
+ "source": "oracle: cai score (published CLI), 2026-10-07",
+ "evidence": {
+  "rubricVersion": "rubric-2099.01.1",
+  "dimensions": [
+   {
+    "id": "D1",
+    "category": "code-quality",
+    "score": 8.0,
+    "confidence": 1.0
+   }
+  ]
+ },
+ "expectedError": true,
+ "oracleMessage": "error: rubric version 'rubric-2099.01.1' is not published under ../spec/rubrics."
+}
