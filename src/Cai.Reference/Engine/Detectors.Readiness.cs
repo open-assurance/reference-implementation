@@ -77,7 +77,7 @@ public static class Readiness
                             _ when Regex.IsMatch(body, @"await\s+Task\.Delay\(") && Regex.IsMatch(body, @"Assert|Should") && !Regex.IsMatch(body, @"while\s*\(|for\s*\(|do\s*\{|SpinWait|WaitUntil|Poll") => "waits with Task.Delay instead of synchronising",
                             _ when Regex.IsMatch(Regex.Replace(body, @"new\s+FakeTimeProvider\([^)]*\)", ""), @"\bDateTime\.(Now|Today)\b|\bDateTimeOffset\.Now\b") => "reads the LOCAL wall clock (time-zone and DST dependent)",
                             _ when Regex.IsMatch(body, @"(?m)^.*(Assert\.|ShouldBe|Should\(\)|\.Be\().*(DateTime|DateTimeOffset)\.(UtcNow|Now|Today)") => "asserts against the wall clock",
-                            _ when Regex.IsMatch(body, @"new Random\(\s*\)|Random\.Shared") => "uses unseeded randomness",
+                            _ when Regex.IsMatch(body, @"new Random\(\s*\)|Random\.Shared") && !RandomOnlyShapesData(body) => "uses unseeded randomness",
                             _ when Regex.IsMatch(body, @"\bStopwatch\b") && Regex.IsMatch(body, @"Elapsed\w*\s*(<|>|<=|>=)") && !Regex.IsMatch(classText, @"FakeTimeProvider|ITimeProvider|TestTimeProvider") => "asserts on elapsed time",
                             _ when Regex.IsMatch(body, @"https?://(?!localhost|127\.0\.0\.1)[\w.-]+") && Regex.IsMatch(body, @"new HttpClient\s*(\(\s*\))?\s*\{|new HttpClient\(\s*\)|new HttpClient\(new (Http|Sockets)Http(Client)?Handler") && !Regex.IsMatch(body, @"MockHttp|FakeHandler|StubHandler|TestHandler|HttpMessageHandler|WebApplicationFactory|TestServer|RichardSzalay|handler") => "calls a real network host",
                             _ when Regex.IsMatch(body, @"Path\.GetTempPath\(\)|""/tmp/|@""C:\\") && !Regex.IsMatch(body, @"Guid\.NewGuid|Random|GetRandomFileName|GetTempFileName") => "writes to a fixed shared path",
@@ -110,17 +110,24 @@ public static class Readiness
         foreach (var t in testFiles) foreach (var d in graph.References.GetValueOrDefault(t) ?? new()) if (!testFiles.Contains(d) && reached.Add(d)) frontier.Enqueue(d);
         while (frontier.Count > 0) foreach (var d in graph.References.GetValueOrDefault(frontier.Dequeue()) ?? new()) if (!testFiles.Contains(d) && reached.Add(d)) frontier.Enqueue(d);
         var direct = testFiles.SelectMany(t => graph.References.GetValueOrDefault(t) ?? new()).Where(d => !testFiles.Contains(d)).ToHashSet(StringComparer.Ordinal);
+        // tests that HOST the application (WebApplicationFactory, TestServer) run its composition root and everything it wires up over HTTP,
+        // which the import graph cannot see: infrastructure in the hosted graph counts as reached; domain and application logic still needs a test that names it
+        var hostedProjects = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var tp in ctx.Workspace.Tests.Where(t => t.Trees.Any(tr => Regex.IsMatch(tr.GetRoot().ToString(), @"WebApplicationFactory<|\bTestServer\b|DistributedApplicationTestingBuilder"))))
+            foreach (var r in tp.Project.ProjectReferences.Where(r => ctx.Repo.Projects.Any(p => p.Path == r && p.Role is ProjectRole.Web or ProjectRole.Tool)))
+            { hostedProjects.Add(r); foreach (var tr in Workspace.TransitiveReferences(ctx.Repo.Projects.First(p => p.Path == r), ctx.Repo)) hostedProjects.Add(tr); }
+        bool HostedInfrastructure(string f) { var pr = ctx.Repo.Projects.First(p => p.Path == graph.FileProject[f]); return hostedProjects.Contains(pr.Path) && pr.Role == ProjectRole.Infrastructure; }
         // only files with logic in them count: contracts, options and middleware are exercised over HTTP, which static reachability cannot see
         var complexity = ctx.Workspace.ProductionTrees.ToDictionary(t => ctx.Workspace.RelPath(t.tree.FilePath), t => Cs.MethodLike(t.tree.GetRoot()).Select(Cs.BodyOf).Where(b => b is not null).Select(b => CodeHealth.Cyclomatic(b!)).DefaultIfEmpty(0).Max(), StringComparer.Ordinal);
         var methodCounts = ctx.Workspace.ProductionTrees.ToDictionary(t => ctx.Workspace.RelPath(t.tree.FilePath), t => Cs.MethodLike(t.tree.GetRoot()).Count(m => Cs.BodyOf(m) is not null), StringComparer.Ordinal);
         var logicFiles = prodFiles.Where(f => (complexity.GetValueOrDefault(f) >= 3 || methodCounts.GetValueOrDefault(f) >= 3 && complexity.GetValueOrDefault(f) >= 2) && !Regex.IsMatch(f, @"(?i)/(Contracts|Dtos?|Requests?|Responses?|Options|Settings|Migrations|Hosting|Program\.cs|Startup\.cs|Middleware)")).ToList();
         // web projects are exercised over HTTP, which the import graph cannot see: only library-side logic is flagged, and only when NO test names it
-        var flaggable = logicFiles.Where(f => ctx.Repo.Projects.First(p => p.Path == graph.FileProject[f]).Role is not (ProjectRole.Web or ProjectRole.Tool)).ToList();
+        var flaggable = logicFiles.Where(f => ctx.Repo.Projects.First(p => p.Path == graph.FileProject[f]).Role is not (ProjectRole.Web or ProjectRole.Tool) && !HostedInfrastructure(f)).ToList();
         var unreached = flaggable.Where(f => !direct.Contains(f)).ToList();
         foreach (var f in unreached.OrderBy(f => f, StringComparer.Ordinal))
             ctx.Add(new Finding("test-coverage", "R4", $"{Path.GetFileName(f)} holds logic (complexity {complexity[f]}) and no test references it{(reached.Contains(f) ? " directly (only through a tested caller)" : ", even transitively")}", f, null, null, reached.Contains(f) ? 0.5 : 1));
-        var reach = logicFiles.Count == 0 ? 1 : (double)logicFiles.Count(reached.Contains) / logicFiles.Count;
-        ctx.Measure("R4", Shape.FromShare(reach), note: $"{logicFiles.Count(reached.Contains)} of {logicFiles.Count} logic-bearing production files reachable from tests ({direct.Count} files directly)");
+        var reach = logicFiles.Count == 0 ? 1 : (double)logicFiles.Count(f => reached.Contains(f) || HostedInfrastructure(f)) / logicFiles.Count;
+        ctx.Measure("R4", Shape.FromShare(reach), note: $"{logicFiles.Count(f => reached.Contains(f) || HostedInfrastructure(f))} of {logicFiles.Count} logic-bearing production files reachable from tests ({direct.Count} files directly, {hostedProjects.Count} project(s) hosted by integration tests)");
         string RoleOf(string f) { var p = ctx.Repo.Projects.First(x => x.Path == graph.FileProject[f]); return p.Role is ProjectRole.Domain or ProjectRole.Application ? "domain" : p.Role == ProjectRole.Web && Regex.IsMatch(f, @"(?i)/(Controllers|Endpoints|Pages|Components)/") ? "web" : Regex.IsMatch(f, @"(?i)/(Domain|Application|Services|Pricing|Rules|Policies|Features)/") ? "domain" : "other"; }
         var domainFiles = prodFiles.Where(f => RoleOf(f) == "domain").ToList(); var webFiles = prodFiles.Where(f => RoleOf(f) == "web").ToList();
         if (domainFiles.Count == 0) ctx.Skip("P9", "no domain or application layer to compare controller coverage against");
@@ -144,7 +151,8 @@ public static class Readiness
             if (NuGetVersion.TryParse(version, out var v) && v.IsPrerelease)
             { pre++; var line = LineOf(ctx.Repo.Text(p.Path), id) ?? LineOf(ctx.Repo.Text("Directory.Packages.props"), id); ctx.Add(new Finding("prerelease-dependency", "D12", $"{id} {version} is a pre-release build shipped in {p.Name}", ctx.Repo.Exists("Directory.Packages.props") && LineOf(ctx.Repo.Text(p.Path), id) is null ? "Directory.Packages.props" : p.Path, line, line, 1)); }
         var unlocked = prod.Where(p => p.Packages.Count > 0 && !p.LockFile).ToList();
-        foreach (var p in unlocked) ctx.Add(new Finding("dependencies-not-locked", "SC1", $"{p.Name} restores without a lock file: the build is not reproducible", p.Path, null, null, 1));
+        if (unlocked.Count > 0 && unlocked.Count == prod.Count(p => p.Packages.Count > 0)) ctx.Add(new Finding("dependencies-not-locked", "SC1", $"none of the {unlocked.Count} production projects restores with a lock file (packages.lock.json / RestorePackagesWithLockFile): the build is not reproducible", unlocked.OrderBy(p => p.Path, StringComparer.Ordinal).First().Path, null, null, Math.Min(3, unlocked.Count)));
+        else foreach (var p in unlocked) ctx.Add(new Finding("dependencies-not-locked", "SC1", $"{p.Name} restores without a lock file while the other projects lock theirs: the build is not reproducible", p.Path, null, null, 1));
         var lockedShare = prod.Count(p => p.Packages.Count > 0) == 0 ? 1 : (double)prod.Count(p => p.Packages.Count > 0 && p.LockFile) / prod.Count(p => p.Packages.Count > 0);
         var lockedMode = ctx.Repo.Projects.Any(p => p.RestoreLockedMode) || ctx.Repo.Files.Where(f => f.StartsWith(".github/workflows/")).Any(f => ctx.Repo.Text(f).Contains("--locked-mode"));
         ctx.Measure("SC1", Shape.FromShare(lockedShare) * (lockedMode ? 1 : 0.8), advisory: true, note: $"{lockedShare:P0} of production projects lock their packages; locked-mode restore: {lockedMode}");
@@ -176,6 +184,18 @@ public static class Readiness
     private static int? LineOf(string text, string needle) { var i = text.IndexOf(needle, StringComparison.OrdinalIgnoreCase); return i < 0 ? null : text.Take(i).Count(ch => ch == '\n') + 1; }
 
     // ---------------- P1 P3 P12 ----------------
+    /// <summary>Randomness that only makes test data unique (a registration number inside a string, a payload field) does not change the outcome; randomness that reaches an assertion, a loop bound or a branch does.</summary>
+    private static bool RandomOnlyShapesData(string body)
+    {
+        var lines = body.Split('\n').Where(l => Regex.IsMatch(l, @"new Random\(\s*\)|Random\.Shared")).ToList();
+        if (lines.Any(l => Regex.IsMatch(l, @"Assert|Should|\bif\s*\(|\bfor\s*\(|\bwhile\s*\("))) return false;
+        var vars = lines.SelectMany(l => Regex.Matches(l, @"\bvar\s+(\w+)\s*=").Select(m => m.Groups[1].Value)).ToList();
+        return vars.All(v => !Regex.IsMatch(body, $@"(Assert|Should)[^\n]*\b{Regex.Escape(v)}\b"));
+    }
+
+    /// <summary>Where a repository documents itself: README files, docs/, doc/, runbooks/, ops/, wiki/ and decision folders. A Markdown file elsewhere (a fixture, a vendored package, a benchmark key) is not the project's documentation.</summary>
+    public static IEnumerable<string> DocumentationFiles(Repository repo) => repo.Files.Where(f => Regex.IsMatch(f, @"(?i)\.(md|rst|adoc|txt)$") && (Regex.IsMatch(f, @"(?i)^(readme|runbook|operations|disaster[-_]?recovery|accessibility|a11y)[^/]*$") || Regex.IsMatch(f, @"(?i)^(docs?|runbooks?|ops|wiki|adrs?|decisions|architecture)/")));
+
     public static IEnumerable<string> WorkflowFiles(Repository repo) => repo.Files.Where(f => Regex.IsMatch(f, @"^\.github/workflows/[^/]+\.ya?ml$|^\.gitlab-ci\.ya?ml$|^azure-pipelines[^/]*\.ya?ml$|^\.circleci/config\.ya?ml$|^Jenkinsfile$|^bitbucket-pipelines\.ya?ml$|^\.drone\.ya?ml$|^\.tekton/|^\.buildkite/"));
 
     private static void Pipeline(ScanContext ctx)
@@ -281,13 +301,13 @@ public static class Readiness
         if (!hasState) ctx.Skip("P5", "no persistent state (no database, document store or volume): nothing to back up or recover");
         else
         {
-            var docs = string.Join("\n", repo.Files.Where(f => f.EndsWith(".md", StringComparison.OrdinalIgnoreCase)).Select(repo.Text));
+            var docs = string.Join("\n", DocumentationFiles(repo).Select(repo.Text));
             var infra = string.Join("\n", repo.Files.Where(f => Regex.IsMatch(f, @"\.(ya?ml|tf|bicep|sh|ps1)$")).Select(repo.Text));
             var p5 = new (string, bool)[]
             {
-                ("a backup job or snapshot policy", Regex.IsMatch(infra, @"(?i)pg_dump|mysqldump|backup|snapshot|velero|point.in.time|pitr|BackupPolicy|backup_retention")),
-                ("a documented restore procedure or RTO/RPO", Regex.IsMatch(docs, @"(?i)\bRTO\b|\bRPO\b|restore|disaster recovery|runbook")),
-                ("persistence declared in infrastructure (volumes, managed database, retention)", Regex.IsMatch(infra, @"(?i)PersistentVolumeClaim|StatefulSet|volumeClaimTemplates|aws_db_instance|azurerm_(postgresql|mssql)|google_sql|storageClassName|volumes:")),
+                ("a backup job or snapshot policy (in infrastructure code, or a managed service's schedule documented)", Regex.IsMatch(infra, @"(?i)pg_dump|mysqldump|backup|snapshot|velero|point.in.time|pitr|BackupPolicy|backup_retention") || Regex.IsMatch(docs, @"(?i)(daily|nightly|hourly|automated|scheduled|continuous)\s+(backup|snapshot)s?|backups?\s+(run|are taken|are kept)|snapshot (policy|schedule)|point.in.time recovery")),
+                ("a documented restore procedure or RTO/RPO", Regex.IsMatch(docs, @"(?i)\bRTO\b|\bRPO\b|disaster recovery|restor(e|ing|ation) (the |a |from |procedure|process)|backup(s)? (are|is|run|schedule)|point.in.time")),
+                ("persistence declared in infrastructure (volume claims, named volumes, managed database)", Regex.IsMatch(infra, @"(?i)PersistentVolumeClaim|persistentVolumeClaim:|StatefulSet|volumeClaimTemplates|aws_db_instance|aws_rds_cluster|azurerm_(postgresql|mssql|cosmosdb)|google_sql|storageClassName|(?m)^volumes:\s*$") || Regex.IsMatch(docs, @"(?i)managed (postgres|postgresql|sql|database|mysql)|RDS|Cloud SQL|Azure (Database|SQL)|Aurora")),
                 ("retention or deletion protection", Regex.IsMatch(infra, @"(?i)deletion_protection|retention|reclaimPolicy:\s*Retain|prevent_destroy")),
             };
             foreach (var (name, ok) in p5) if (!ok) ctx.Add(new Finding("disaster-recovery-evidence", "P5", $"disaster recovery: missing {name}", null, null, null, 1));
@@ -315,7 +335,8 @@ public static class Readiness
                 ctx.Add(new Finding("release-hygiene", "P6", $"the project version {projectVersion} is behind the latest release tag {latestTag}", null, null, null, 1));
         }
         foreach (var (name, ok, where) in p6) if (!ok && !name.StartsWith("the changelog covers")) ctx.Add(new Finding("release-hygiene", "P6", $"release hygiene: missing {name}", null, null, null, 1));
-        ctx.Measure("P6", Shape.FromChecklist(p6.Count(c => c.Item2), p6.Count), note: string.Join(", ", p6.Where(c => c.Item2).Select(c => c.Item1)));
+        double P6Weight((string, bool, string?) c) => c.Item1.StartsWith("the changelog covers") ? 2 : 1;
+        ctx.Measure("P6", 10 * p6.Where(c => c.Item2).Sum(P6Weight) / p6.Sum(P6Weight), note: string.Join(", ", p6.Where(c => c.Item2).Select(c => c.Item1)));
         // P7 outbound HTTP resilience
         var httpSites = new List<(string file, int line, string what, bool resilient)>();
         foreach (var (p, tree) in ctx.Workspace.ProductionTrees)

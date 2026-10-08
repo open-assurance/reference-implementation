@@ -1,0 +1,779 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://codeassuranceindex.info/schemas/cai-delivery-1.0.schema.json",
+  "title": "CAI-delivery package",
+  "description": "A signed (Ed25519), tamper-evident, portable CAI evidence artifact: a point-in-time CAI verdict codeassuranceindex.info recomputed, the evidence it folds from, and the provenance — with a detached signature over the payload's canonical form. Format version 1.x (MAJOR 1). A verifier MUST reject a package whose payload.schemaVersion MAJOR it does not implement; a higher MINOR is forward-compatible and unknown fields are ignored.",
+  "type": "object",
+  "required": [
+    "payload",
+    "signature"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "payload": {
+      "$ref": "#/$defs/payload"
+    },
+    "signature": {
+      "$ref": "#/$defs/signature"
+    }
+  },
+  "$defs": {
+    "payload": {
+      "type": "object",
+      "description": "The signed content — everything here is covered by the signature.",
+      "required": [
+        "schemaVersion",
+        "deliveryId",
+        "issuedAt",
+        "issuer",
+        "producer",
+        "subject",
+        "rubricVersion",
+        "verdict",
+        "evidence"
+      ],
+      "additionalProperties": true,
+      "properties": {
+        "schemaVersion": {
+          "type": "string",
+          "pattern": "^[0-9]+\\.[0-9]+$",
+          "description": "Package format version MAJOR.MINOR. This document describes MAJOR 1, currently MINOR 2.",
+          "examples": [
+            "1.2"
+          ]
+        },
+        "deliveryId": {
+          "type": "string",
+          "minLength": 1,
+          "description": "cai's stable id for this delivery."
+        },
+        "issuedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "When cai signed the delivery (RFC 3339 UTC)."
+        },
+        "issuer": {
+          "type": "object",
+          "required": [
+            "name",
+            "keyId"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "name": {
+              "type": "string",
+              "description": "The signer — codeassuranceindex.info."
+            },
+            "keyId": {
+              "type": "string",
+              "minLength": 1,
+              "description": "The signing key id; must equal signature.keyId."
+            }
+          }
+        },
+        "producer": {
+          "type": "object",
+          "required": [
+            "name"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "name": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Who measured the code (the authenticated producer)."
+            },
+            "scanner": {
+              "type": "string",
+              "description": "The analyzer that produced the evidence."
+            },
+            "scannerVersion": {
+              "type": "string",
+              "description": "The analyzer build version."
+            }
+          }
+        },
+        "subject": {
+          "type": "object",
+          "required": [
+            "repository"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "repository": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Repository identity, e.g. acme/checkout-api."
+            },
+            "commit": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "The commit measured."
+            },
+            "host": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "Optional forge, e.g. github.com."
+            },
+            "languages": {
+              "description": "What the subject is written in, as the producer names it. ADDED AT MINOR 1.1 because the standard's language field guides group every measured subject by exactly this and a 1.0 delivery says only what a subject scored, never what it is. Additive: a 1.0 package keeps verifying byte for byte and groups under no language.",
+              "type": [
+                "object",
+                "null"
+              ],
+              "additionalProperties": false,
+              "properties": {
+                "primary": {
+                  "description": "The dominant language, lower-case (e.g. csharp). Null when none dominates.",
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "secondary": {
+                  "description": "The languages that materially share the codebase, dominant first.",
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              }
+            },
+            "origin": {
+              "description": "Where the codebase's owner says they are. ADDED AT MINOR 1.1 for the standard's country cut, which cannot be published without its denominators: the only origin signal that exists is the owning forge account's free-text profile line and about half of owners leave it blank, so a country share taken over the accounts that fill it in measures who fills in a profile field, not where software is written. 'declared' travels beside 'country' for exactly that reason.",
+              "type": [
+                "object",
+                "null"
+              ],
+              "additionalProperties": false,
+              "properties": {
+                "country": {
+                  "description": "The normalised country, or null when the declared location did not resolve. An unresolved origin is NEVER mapped to a placeholder country.",
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "declared": {
+                  "description": "The owner wrote something in the field, placeable or not.",
+                  "type": "boolean"
+                },
+                "resolvedBy": {
+                  "description": "How the country was found. A country named outright is a far better claim than a city name spotted inside a sentence, and a page that cannot separate them cannot be argued with.",
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "enum": [
+                    "countryName",
+                    "cityName",
+                    "usState",
+                    "countryNameInText",
+                    "cityNameInText",
+                    null
+                  ]
+                },
+                "unresolvedReason": {
+                  "description": "Why nothing resolved. 'declared nothing' and 'declared something unplaceable' are different facts about a population; 'ambiguous' means the producer knew what was written and refused to flip a coin.",
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "enum": [
+                    "blank",
+                    "nonGeographic",
+                    "unrecognised",
+                    "ambiguous",
+                    null
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "rubricVersion": {
+          "type": "string",
+          "minLength": 1,
+          "description": "The frozen rubric version the verdict was computed under."
+        },
+        "qualityBar": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "The quality bar band cutlines follow (absent => production baseline)."
+        },
+        "measurement": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "measuredLoc": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 0
+            },
+            "productionLoc": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "analyzableProjects": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "scannedAt": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "format": "date-time"
+            }
+          }
+        },
+        "narration": {
+          "type": "object",
+          "description": "The written account of this measurement: what the system IS, and how it got to this score. ADDED AT MINOR 1.2 because the producer writes both for every narrated run and had nowhere in the package to put them — its own public survey showed them while the standard's showed neither. Carried INSIDE the signed payload rather than fetched from the producer at render time: prose a reader cannot check against the measurement it describes is the standard repeating a claim instead of publishing evidence, and the same signature that covers the score covers this. Absent, never empty, when a run was not narrated — narration needs a model route and about half of a large corpus is scanned without one, so empty prose would state something about the codebase when the truth is about the scan.",
+          "properties": {
+            "changelog": {
+              "type": "string",
+              "description": "How this codebase got to this score since the reading before it, as markdown. Absent on a repository's first survey, which has no previous reading to compare against."
+            },
+            "systemOverview": {
+              "type": "string",
+              "description": "What this system is, as markdown, written from the codebase's whole history rather than from this run's diff. Absent when the run was not narrated."
+            }
+          },
+          "additionalProperties": false
+        },
+        "verdict": {
+          "$ref": "#/$defs/verdict"
+        },
+        "evidence": {
+          "$ref": "#/$defs/evidence"
+        }
+      }
+    },
+    "verdict": {
+      "type": "object",
+      "description": "The CAI verdict cai recomputed from the embedded evidence.",
+      "required": [
+        "cai",
+        "band",
+        "lenses"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "cai": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100,
+          "description": "The 0-100 headline CAI."
+        },
+        "band": {
+          "$ref": "#/$defs/bandLabel"
+        },
+        "aggregate": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "categoryMean": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0,
+          "maximum": 100
+        },
+        "coherenceNote": {
+          "type": "string"
+        },
+        "lenses": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/lens"
+          }
+        },
+        "categories": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/category"
+          }
+        }
+      }
+    },
+    "lens": {
+      "type": "object",
+      "required": [
+        "lens",
+        "score",
+        "band"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "lens": {
+          "type": "string"
+        },
+        "score": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "band": {
+          "$ref": "#/$defs/bandLabel"
+        },
+        "weight": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "contribution": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "criticalGated": {
+          "type": "boolean"
+        },
+        "criticalContributors": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "itemCount": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "category": {
+      "type": "object",
+      "required": [
+        "category",
+        "lens",
+        "dimensionCount"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "category": {
+          "type": "string"
+        },
+        "lens": {
+          "type": "string"
+        },
+        "score": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0,
+          "maximum": 100
+        },
+        "dimensionCount": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "evidence": {
+      "type": "object",
+      "description": "The embedded evidence bundle the verdict folds from (see the Cai.Scoring evidence-bundle contract). Its presence is what makes the package independently reproducible.",
+      "required": [
+        "rubricVersion"
+      ],
+      "additionalProperties": true,
+      "properties": {
+        "rubricVersion": {
+          "type": "string",
+          "minLength": 1
+        },
+        "commit": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "qualityBar": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "analyzableProjects": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "productionLoc": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "headlineScore": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0,
+          "maximum": 100
+        },
+        "rebuildCost": {
+          "description": "DESCRIPTIVE, non-scored rebuild-cost estimate echoed by consumers; NEVER folded into the CAI. A plain string (e.g. \"€118k–€204k\") or a { low, high, currency } object. Absent => consumer shows \"Not assessed\".",
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "object",
+              "properties": {
+                "low": {
+                  "type": "number"
+                },
+                "high": {
+                  "type": "number"
+                },
+                "currency": {
+                  "type": "string"
+                }
+              }
+            }
+          ]
+        },
+        "busFactor": {
+          "type": "string",
+          "description": "DESCRIPTIVE, non-scored key-person-risk summary (producer-worded, e.g. \"2 of 11 devs\"); echoed verbatim, NEVER a scored dimension. Absent => consumer shows \"Not assessed\"."
+        },
+        "surveyFit": {
+          "type": "object",
+          "description": "DESCRIPTIVE, non-scored survey clarity (FIT): how much of the survey actually resolved on this codebase. Echoed verbatim, NEVER folded into the CAI — a thin survey is not a bad codebase. Carried because a score from a thin survey and a score from a complete one are different claims, and without it they look identical. Absent => consumer shows no clarity figure.",
+          "properties": {
+            "depthApplicable": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "Domain/architecture lenses that applied to this codebase at all (a lens that does not apply is not counted, so it is never held against the repo)."
+            },
+            "depthFired": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "Applicable lenses that actually resolved; the gap to depthApplicable is this survey's blind spots."
+            },
+            "languageApplicability": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 0,
+              "maximum": 10,
+              "description": "The producer catalogue's curated 0-10 applicability rating for the scanned language."
+            },
+            "band": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "The producer's own band label, echoed verbatim."
+            },
+            "explanation": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "The producer's one-line explanation, echoed verbatim."
+            }
+          }
+        },
+        "dimensions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "id",
+              "category",
+              "score",
+              "confidence"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "category": {
+                "type": "string"
+              },
+              "score": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 10
+              },
+              "confidence": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1
+              },
+              "coverage": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1
+              },
+              "advisory": {
+                "type": "boolean"
+              }
+            }
+          }
+        },
+        "metaDimensions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "id",
+              "lens"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "lens": {
+                "type": "string"
+              },
+              "score": {
+                "type": [
+                  "number",
+                  "null"
+                ],
+                "minimum": 0,
+                "maximum": 10
+              },
+              "advisory": {
+                "type": "boolean"
+              }
+            }
+          }
+        },
+        "lenses": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "lens",
+              "score",
+              "owaWeight"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "lens": {
+                "type": "string"
+              },
+              "score": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 100
+              },
+              "owaWeight": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          }
+        },
+        "securityReading": {
+          "description": "DESCRIPTIVE, non-scored security reading of ONE codebase — what the survey found when it looked for known-vulnerable dependencies, a disclosure policy, committed secrets and supply-chain attestations. NEVER folded into the CAI. ADDED AT MINOR 1.1. Every field is a yes/no about one codebase, and the standard's corpus figures count CODEBASES; only the finding counts count findings. The *Measured / *Measurable flags travel beside the answers they qualify because \"not measured\" is a third answer: a reading that collapsed it into 0 would publish an unreadable dependency graph as a clean bill of health.",
+          "type": [
+            "object",
+            "null"
+          ],
+          "additionalProperties": true,
+          "properties": {
+            "vulnMeasurable": {
+              "description": "A scanner resolved this codebase's dependency graph and reported counts.",
+              "type": "boolean"
+            },
+            "vulnScanFailed": {
+              "description": "A dependency scanner ran and fell over, or emitted output the parser could not read. Only meaningful when vulnMeasurable is false.",
+              "type": "boolean"
+            },
+            "vulnAffected": {
+              "description": "At least one known-vulnerable component.",
+              "type": "boolean"
+            },
+            "vulnHighOrCritical": {
+              "description": "At least one High or Critical.",
+              "type": "boolean"
+            },
+            "vulnCritical": {
+              "description": "At least one Critical.",
+              "type": "boolean"
+            },
+            "findings": {
+              "description": "Vulnerability findings, summed across the measurable dimensions of this survey.",
+              "type": "integer",
+              "minimum": 0
+            },
+            "findingsCritical": {
+              "description": "Critical findings.",
+              "type": "integer",
+              "minimum": 0
+            },
+            "findingsHigh": {
+              "description": "High findings.",
+              "type": "integer",
+              "minimum": 0
+            },
+            "findingsMedium": {
+              "description": "Medium findings.",
+              "type": "integer",
+              "minimum": 0
+            },
+            "findingsLow": {
+              "description": "Low findings.",
+              "type": "integer",
+              "minimum": 0
+            },
+            "disclosureMeasured": {
+              "description": "A disclosure policy was actually looked for. NOT the same as one applying: the question having been asked is the measurement.",
+              "type": "boolean"
+            },
+            "disclosurePolicy": {
+              "description": "A disclosure policy file was found.",
+              "type": "boolean"
+            },
+            "disclosureContact": {
+              "description": "The policy names a reporting contact.",
+              "type": "boolean"
+            },
+            "secretsHistoryMeasured": {
+              "description": "The full-history secret scan ran.",
+              "type": "boolean"
+            },
+            "secretsHistoryAffected": {
+              "description": "It found at least one secret ever committed.",
+              "type": "boolean"
+            },
+            "secretsHistoryFindings": {
+              "description": "How many historical secret findings it reported.",
+              "type": "integer",
+              "minimum": 0
+            },
+            "secretsCurrentMeasured": {
+              "description": "The current-files secret scan ran.",
+              "type": "boolean"
+            },
+            "secretsCurrentAffected": {
+              "description": "It found at least one secret still in the working tree.",
+              "type": "boolean"
+            },
+            "supplyChainMeasurable": {
+              "description": "There is a release pipeline the four supply-chain controls could be judged against.",
+              "type": "boolean"
+            },
+            "sbom": {
+              "description": "Publishes an SBOM.",
+              "type": "boolean"
+            },
+            "provenance": {
+              "description": "Publishes build provenance.",
+              "type": "boolean"
+            },
+            "signing": {
+              "description": "Signs its releases.",
+              "type": "boolean"
+            },
+            "pinnedActions": {
+              "description": "Pins its CI actions to a commit.",
+              "type": "boolean"
+            },
+            "advisoriesRead": {
+              "description": "At least one vulnerability brief on this survey was read for advisories at all. False means the producer's indexing has not reached it, which is never a fact about the codebase.",
+              "type": "boolean"
+            },
+            "advisoryListComplete": {
+              "description": "Every finding the counts describe also appeared as a row that could be read. The count is the truth and the list is what was seen; they are allowed to disagree.",
+              "type": "boolean"
+            },
+            "advisories": {
+              "description": "Every advisory this survey could be SEEN to name — a floor, not a list.",
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": [
+                  "advisoryId",
+                  "package"
+                ],
+                "additionalProperties": false,
+                "properties": {
+                  "advisoryId": {
+                    "description": "The advisory as the ecosystem names it (GHSA-…, CVE-…, RUSTSEC-…, GO-…), VERBATIM and never case-folded.",
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "package": {
+                    "description": "The package it is against, verbatim — an npm scope and a Go module path are part of the name.",
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "packageVersion": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "inherited": {
+                    "type": "boolean"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "signature": {
+      "type": "object",
+      "description": "The detached Ed25519 signature over the payload's canonical (RFC 8785-targeting) form.",
+      "required": [
+        "alg",
+        "keyId",
+        "canon",
+        "value"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "alg": {
+          "const": "Ed25519",
+          "description": "RFC 8032 PureEdDSA."
+        },
+        "keyId": {
+          "type": "string",
+          "minLength": 1,
+          "description": "The public key to verify with; must equal payload.issuer.keyId."
+        },
+        "canon": {
+          "const": "RFC8785-json",
+          "description": "The canonicalization method the signed bytes were produced by."
+        },
+        "value": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_-]+$",
+          "description": "base64url (unpadded) of the 64-byte Ed25519 signature."
+        }
+      }
+    },
+    "bandLabel": {
+      "type": "string",
+      "enum": [
+        "Exemplary",
+        "Strong",
+        "Adequate",
+        "Weak",
+        "Critical"
+      ],
+      "description": "The published CAI band vocabulary."
+    }
+  }
+}

@@ -167,7 +167,7 @@ public static class Security
         if (inv.Expression.ToString() is "Process.Start" && args.Count > 0 && (args.Count > 1 && BuiltFromInput(model, args[1].Expression, isWeb, scope) || BuiltFromInput(model, args[0].Expression, isWeb, scope)))
             findings.Add(new Finding("command-injection", "D29", "Process.Start with a command line built from request input", rel, Cs.Line(inv), null, 2));
         // path traversal
-        if (inv.Expression.ToString() is "Path.Combine" or "Path.Join" && args.Skip(1).Any(a => Tainted(model, a.Expression, isWeb)))
+        if (inv.Expression.ToString() is "Path.Combine" or "Path.Join" && args.Skip(1).Any(a => a.Expression is IdentifierNameSyntax or MemberAccessExpressionSyntax ? !Harmless(model, a.Expression, scope) && Tainted(model, a.Expression, isWeb) : BuiltFromInput(model, a.Expression, isWeb, scope)))
         {
             var guarded = scope.ToString().Contains("GetFullPath") && Regex.IsMatch(scope.ToString(), @"StartsWith\(") || Regex.IsMatch(scope.ToString(), @"Path\.GetFileName\(|\.Contains\(""\.\.""\)|IsPathRooted|GetInvalidFileNameChars|\[A-Za-z0-9|Regex\.IsMatch");
             if (!guarded) findings.Add(new Finding("path-traversal", "D29", "a request-supplied segment is combined into a file path with no canonicalisation or root check", rel, Cs.Line(inv), null, 2));
@@ -273,8 +273,9 @@ public static class Security
         // SQL text assembled by interpolation and later executed: catch the assembly site when the method also executes SQL
         var text = string.Concat(interp.Contents.OfType<InterpolatedStringTextSyntax>().Select(t => t.TextToken.Text));
         if (!Regex.IsMatch(text, @"(?i)\b(select|insert|update|delete|where|from|order by)\b")) return;
-        if (!interp.Contents.OfType<InterpolationSyntax>().Any(h => Tainted(model, h.Expression, isWeb))) return;
         var method = Cs.EnclosingMethod(interp); var body = method is null ? "" : Cs.BodyOf(method)?.ToString() ?? "";
+        var scope = (SyntaxNode?)(method is null ? null : Cs.BodyOf(method)) ?? interp;
+        if (!interp.Contents.OfType<InterpolationSyntax>().Any(h => !Harmless(model, h.Expression, scope) && Tainted(model, h.Expression, isWeb))) return;
         if (interp.Parent is ArgumentSyntax arg && arg.Parent?.Parent is InvocationExpressionSyntax inv && Cs.MemberName(inv.Expression) is "FromSqlInterpolated" or "ExecuteSqlInterpolated" or "ExecuteSqlInterpolatedAsync" or "SqlQuery" or "FromSql" or "ExecuteSql" or "ExecuteSqlAsync") return;   // FormattableString parameterises
         if (Regex.IsMatch(body, @"FromSqlRaw|ExecuteSqlRaw|SqlQueryRaw|CommandText|QueryAsync|ExecuteAsync|SqlCommand|NpgsqlCommand|Execute\("))
             findings.Add(new Finding("sql-injection", "D29", $"SQL text interpolates request input: `{Trunc(interp.ToString(), 60)}`", rel, Cs.Line(interp), null, 2));
@@ -422,7 +423,7 @@ public static class Security
         var validation = Regex.IsMatch(text, @"\[ApiController\]|FluentValidation|AddValidatorsFromAssembly|ModelState\.IsValid|\[Required\]|\[Range\(|\[StringLength|\[MaxLength|MiniValidation|AddValidation|ValidateDataAnnotations|\.Validate\(");
         var cookiesSecure = !Regex.IsMatch(text, @"new CookieOptions") || Regex.IsMatch(text, @"Secure\s*=\s*true|CookieSecurePolicy\.Always|HttpOnly\s*=\s*true|SameSite\s*=\s*SameSiteMode\.(Strict|Lax)");
         var authBeforeAuthz = !Regex.IsMatch(text, @"UseAuthorization\(\)[\s\S]{0,400}UseAuthentication\(\)");
-        var crypto = !ctx.FindingsFor("D29").Any(f => f.RuleId is "weak-cryptographic-algorithm" or "weak-hash-algorithm" or "improper-certificate-validation" or "token-signature-or-expiry-not-validated");
+        var crypto = !ctx.FindingsFor("D29").Any(f => f.RuleId is "weak-cryptographic-algorithm" or "weak-hash-algorithm" or "insufficient-password-hashing" or "improper-certificate-validation" or "token-signature-or-expiry-not-validated");
         // concrete sites
         foreach (var pc in web) foreach (var tree in pc.Trees.Where(t => !pc.IsGenerated(t)))
         {
@@ -447,7 +448,7 @@ public static class Security
                 if (missing.Count > 0 && !Regex.IsMatch(src, @"CookiePolicyOptions|MinimumSameSitePolicy|Secure\s*=\s*CookieSecurePolicy\.Always")) findings.Add(new Finding("insecure-cookie-flags", "S1", $"cookie options without {string.Join("/", missing)}", rel, Cs.Line(oc), null, 1));
             }
             // request models without validation, when the app otherwise validates
-            if (validation && Regex.IsMatch(rel, @"(?i)/(Contracts|Requests|Models|Dtos)/"))
+            if (validation && Regex.IsMatch(rel, @"(?i)/(Contracts|Requests|Models|Dtos)/") && !Regex.IsMatch(src, @"\bValidat(e|ion)\w*\s*\(|\bRequestErrors\b|ValidationProblem|IValidatableObject"))   // a hand-written Validate() on the request is validation too
                 foreach (var t in root.DescendantNodes().OfType<TypeDeclarationSyntax>().Where(t => Regex.IsMatch(t.Identifier.Text, @"(Request|Command|Input|Dto)$")))
                 {
                     var members = (t is RecordDeclarationSyntax r && r.ParameterList is not null ? r.ParameterList.Parameters.Select(pp => (type: Cs.Simple(pp.Type), attrs: pp.AttributeLists.ToString(), node: (SyntaxNode)pp)) : Enumerable.Empty<(string type, string attrs, SyntaxNode node)>()).Concat(t.Members.OfType<PropertyDeclarationSyntax>().Select(pd => (type: Cs.Simple(pd.Type), attrs: pd.AttributeLists.ToString(), node: (SyntaxNode)pd))).ToList();
@@ -485,13 +486,20 @@ public static class Security
         foreach (var (p, tree) in ctx.Workspace.ProductionTrees)
         {
             var rel = ctx.Workspace.RelPath(tree.FilePath);
+            // [LoggerMessage] partial methods are log calls too: the parameter NAMES say what is logged
+            var loggerMessages = tree.GetRoot().DescendantNodes().OfType<MethodDeclarationSyntax>().Where(md => Cs.HasAttribute(md.AttributeLists, "LoggerMessage")).GroupBy(md => md.Identifier.Text, StringComparer.Ordinal).ToDictionary(g => g.Key, g => g.First().ParameterList.Parameters.Select(pp => pp.Identifier.Text).ToList(), StringComparer.Ordinal);
             foreach (var inv in tree.GetRoot().DescendantNodes().OfType<InvocationExpressionSyntax>())
             {
                 var name = Cs.MemberName(inv.Expression);
                 var isLog = Regex.IsMatch(name, @"^Log(Trace|Debug|Information|Warning|Error|Critical)$|^(Information|Debug|Warning|Error|Verbose)$") && Cs.ReceiverText(inv.Expression).Contains("log", StringComparison.OrdinalIgnoreCase);
-                if (isLog)
+                var isLoggerMessage = loggerMessages.TryGetValue(name, out var lmParams);
+                if (isLog || isLoggerMessage)
                 {
-                    var hit = inv.ArgumentList.Arguments.Skip(0).Select(a => a.ToString()).FirstOrDefault(a => Regex.IsMatch(a, @"(?i)\.(Email|EmailAddress|Phone|PhoneNumber|Mobile|FullName|FirstName|LastName|DateOfBirth|Ssn|NationalId|Passport|Iban|CardNumber|HomeAddress|Street|Password|Secret|Token)\b") || Regex.IsMatch(a, @"(?i)^\s*(email|phone|ssn|password|cardNumber|iban|dateOfBirth)\s*[,)]?$"));
+                    var args = inv.ArgumentList.Arguments.Select(a => a.ToString()).ToList();
+                    var hit = args.FirstOrDefault(a => Regex.IsMatch(a, @"(?i)\.(Email|EmailAddress|Phone|PhoneNumber|Mobile|FullName|FirstName|LastName|DateOfBirth|Ssn|NationalId|Passport|Iban|CardNumber|HomeAddress|Street|Password|Secret|Token)\b") || Regex.IsMatch(a, @"(?i)\b(message|mail|email|sms|notification|envelope)\w*\.(To|Recipient|Recipients|From|Cc|Bcc)\b") || Regex.IsMatch(a, @"(?i)^\s*(email|phone|ssn|password|cardNumber|iban|dateOfBirth|recipient)\s*[,)]?$"));
+                    if (hit is null && isLoggerMessage)
+                        for (var i = 0; i < args.Count && i < lmParams!.Count; i++)
+                            if (Regex.IsMatch(lmParams[i], @"(?i)^(recipient|email|emailAddress|phone|phoneNumber|fullName|firstName|lastName|dateOfBirth|ssn|iban|cardNumber|address|password|secret|token)$") && !Regex.IsMatch(args[i], @"Mask|Redact|Hash|Pseudonym|\.Id\b")) { hit = $"{args[i]} (as {lmParams[i]})"; break; }
                     if (hit is not null && !Regex.IsMatch(hit, @"Mask|Redact|Hash|Pseudonym|\.Id\b")) d32.Add(new Finding("sensitive-data-in-logs", "D32", $"{name} writes {Trunc(hit, 40)} to the log: personal data in log storage, outside every retention and access control the database has", rel, Cs.Line(inv), null, 2));
                 }
             }
@@ -521,8 +529,12 @@ public static class Security
         {
             var c1 = new (string, bool)[] { ("transport security (HTTPS / TLS required)", Regex.IsMatch(prodText, @"UseHttpsRedirection|UseHsts|RequireHttpsMetadata\s*=\s*true|SslMode=Require|Ssl Mode=Require|TrustServerCertificate=false|Encrypt=true")), ("encryption or protection of stored sensitive values", Regex.IsMatch(prodText, @"IDataProtector|IDataProtectionProvider|Aes\.|AesGcm|ProtectedData|EncryptedColumn|Always Encrypted|ValueConverter<string, string>.*Encrypt|HasConversion\(.*Encrypt|Pseudonym|Hash\(")), ("secrets held outside the code (vault, key management, environment)", Regex.IsMatch(prodText, @"KeyVault|SecretClient|AddAzureKeyVault|AWSSecretsManager|Vault|GetEnvironmentVariable|AddUserSecrets|DataProtection\.PersistKeysTo")) };
             var c2 = c1; // placeholder to keep structure simple
-            var c3 = new (string, bool)[] { ("an audit interceptor or audit table for changes", Regex.IsMatch(prodText, @"SaveChangesInterceptor|AuditTrail|AuditLog|AuditEntry|Audit\.|IAuditable|CreatedBy|ModifiedBy|ChangedBy|History\b.*Table|Temporal")), ("who/when stamped on changes", Regex.IsMatch(prodText, @"CreatedBy|ModifiedBy|UpdatedBy|ChangedBy|Actor|PerformedBy|UserId.*(Created|Modified|Changed)")) };
-            var c4 = new (string, bool)[] { ("a retention period or TTL", Regex.IsMatch(prodText, @"(?i)retention|TimeToLive|ttl\b|ExpiresAt|ExpireAfter|PurgeAfter|KeepFor")), ("a cleanup / purge job", Regex.IsMatch(prodText, @"(?i)(Purge|Cleanup|Clean|Sweep|Prune|Expire|Retention)\w*(Service|Worker|Job|Sweeper)|BackgroundService[\s\S]{0,600}(Delete|Remove|Purge)")) };
+            var c3 = new (string, bool)[] { ("an audit interceptor or audit table for changes", Regex.IsMatch(prodText, @"SaveChangesInterceptor|AuditTrail|AuditLog|AuditEntry|Audit\.|IAuditable|CreatedBy|ModifiedBy|ChangedBy|History\b.*Table|Temporal")), ("who/when stamped on changes", Regex.IsMatch(prodText, @"CreatedBy|ModifiedBy|UpdatedBy|ChangedBy|Actor|PerformedBy|UserId.*(Created|Modified|Changed)|\b[A-Z]\w*(By|Actor|Operator)\s*\{\s*get")) };
+            // retention of PERSONAL data: an outbox, inbox, cache or log being trimmed is plumbing hygiene, not a retention policy for people's data
+            bool Plumbing(string s) => Regex.IsMatch(s, @"(?i)outbox|inbox|cache|session|token|idempotency|dead.?letter|\blogs?\b") && !Pii.IsMatch(s);
+            var c4 = new (string, bool)[] {
+                ("a retention period or TTL for personal data", ctx.Workspace.ProductionTrees.Select(t => t.tree.GetRoot().ToString()).Any(s => Regex.IsMatch(s, @"(?i)\bretention\w*|TimeToLive|\bttl\b|ExpireAfter|PurgeAfter|KeepFor|RetainFor|DataLifetime") && !Plumbing(s))),   // a membership or token that expires is not a retention policy for stored personal data
+                ("a cleanup / purge job for personal data", ctx.Workspace.ProductionTrees.Select(t => t.tree.GetRoot().ToString()).Any(s => Regex.IsMatch(s, @"(?i)(Purge|Cleanup|Clean|Sweep|Prune|Expire|Retention)\w*(Service|Worker|Job|Sweeper)|BackgroundService[\s\S]{0,600}(Delete|Remove|Purge)") && !Plumbing(s))) };
             var c5 = new (string, bool)[] { ("erasure of a person's data", Regex.IsMatch(prodText, @"(?i)Erase|Anonymi[sz]e|Forget|RightToBeForgotten|DeletePersonalData|RemovePersonalData|ScrubPersonal")), ("export / portability", Regex.IsMatch(prodText, @"(?i)Export(PersonalData|MyData|UserData|Member|Customer|Account)|Portability|DownloadPersonalData|TakeOut")), ("consent recorded and checked", Regex.IsMatch(prodText, @"(?i)Consent")) };
             void Posture(string dim, string rule, (string, bool)[] checks)
             {
@@ -546,9 +558,11 @@ public static class Security
             {
                 var classAuth = Cs.HasAttribute(cls.AttributeLists, "Authorize"); var classAnon = Cs.HasAttribute(cls.AttributeLists, "AllowAnonymous");
                 var actions = cls.Members.OfType<MethodDeclarationSyntax>().Where(m => m.Modifiers.Any(SyntaxKind.PublicKeyword) && (Cs.HasAttribute(m.AttributeLists, "HttpGet", "HttpPost", "HttpPut", "HttpDelete", "HttpPatch", "Route") || true)).ToList();
-                var anyActionAuth = actions.Any(a => Cs.HasAttribute(a.AttributeLists, "Authorize"));
+                // an action that checks authorization in its body (permission service, role check, Forbid/Unauthorized) authorizes too, just not declaratively
+                bool AuthorizedInBody(MethodDeclarationSyntax a) => Regex.IsMatch(a.Body?.ToString() ?? a.ExpressionBody?.ToString() ?? "", @"\bIsAuthorized\(|\bAuthorizeAsync\(|User\.IsInRole\(|HasPermission\(|HasClaim\(|\bForbid\(\)|\bUnauthorized\(\)|\bChallenge\(\)");
+                var anyActionAuth = actions.Any(a => Cs.HasAttribute(a.AttributeLists, "Authorize") || AuthorizedInBody(a));
                 var isHealth = Regex.IsMatch(cls.Identifier.Text, @"(?i)health|ping|status|version|metrics|openapi|swagger");
-                controllers.Add((cls.Identifier.Text, rel, Cs.Line(cls.Identifier), classAuth || anyActionAuth && actions.All(a => Cs.HasAttribute(a.AttributeLists, "Authorize") || Cs.HasAttribute(a.AttributeLists, "AllowAnonymous")), classAnon || isHealth));
+                controllers.Add((cls.Identifier.Text, rel, Cs.Line(cls.Identifier), classAuth || anyActionAuth && actions.All(a => Cs.HasAttribute(a.AttributeLists, "Authorize") || Cs.HasAttribute(a.AttributeLists, "AllowAnonymous") || AuthorizedInBody(a)), classAnon || isHealth));
             }
             // minimal API groups
             foreach (var inv in tree.GetRoot().DescendantNodes().OfType<InvocationExpressionSyntax>().Where(i => Regex.IsMatch(Cs.MemberName(i.Expression), @"^Map(Get|Post|Put|Delete|Patch)$")))

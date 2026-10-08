@@ -117,7 +117,7 @@ public static class Architecture
 
         // D7: recorded architecture rules nobody enforces
         // a checkable ARCHITECTURE rule talks about references, dependencies, layers or boundaries — not about any "must" in prose
-        var ruleDocs = ctx.Repo.Files.Where(f => f.EndsWith(".md", StringComparison.OrdinalIgnoreCase) && Regex.IsMatch(f, @"(?i)(^|/)(docs?|adrs?|decisions|architecture)/|(?i)architecture")).Where(f => Regex.IsMatch(ctx.Repo.Text(f), @"(?i)\b(must|may|shall|should)\s+(not\s+|only\s+)?(reference|depend|import|call into|use types from|know about)|\bdepend(s|ency)?\s+(only\s+)?on\b.*\b(layer|project|slice|module|context)|dependency rule|layer(ing)? rule|(do|does) not reference|no (project|slice|layer|module) .* may|enforcement:")).ToList();
+        var ruleDocs = ctx.Repo.Files.Where(f => f.EndsWith(".md", StringComparison.OrdinalIgnoreCase) && Regex.IsMatch(f, @"(?i)(^|/)(docs?|adrs?|decisions|architecture)/|(?i)architecture")).Where(f => Regex.IsMatch(ctx.Repo.Text(f), @"(?i)\b(must|may|shall|should)\s+(not\s+|only\s+)?(reference|depend|import|call into|use types from|know about)|\bdepend(s|ency)?\s+(only\s+)?on\b.*\b(layer|project|slice|module|context)|dependency rule|layer(ing)? rule|(do|does) not reference|no (project|slice|layer|module) .* may|enforcement:|\bnever (take|reference|depend|call|use|reach)\b|only (through|via) (the )?(repositor|application|handler|query)")).ToList();
         var archTests = ctx.Workspace.Tests.Any(t => t.Trees.Any(tr => Regex.IsMatch(tr.GetRoot().ToString(), @"NetArchTest|ArchUnitNET|ArchRuleDefinition|Types\.InAssembly|HaveDependencyOn|NotHaveDependencyOn|GetReferencedAssemblies|ProjectReference"))) || ctx.Repo.Projects.Any(p => p.HasPackage("NetArchTest") || p.HasPackage("ArchUnitNET") || p.HasPackage("Microsoft.CodeAnalysis.BannedApiAnalyzers"));
         var d7 = new List<Finding>();
         foreach (var doc in ruleDocs)
@@ -132,6 +132,8 @@ public static class Architecture
                 d7.Add(new Finding("architecture-rules-unenforced", "D7", $"{Path.GetFileName(doc)} claims `enforcement: {enforcement}` through {link}, which does not exist: the rule is enforced by nothing", doc, null, null, 1));
             else if (enforcement.Length == 0 && !archTests && violations.Count > 0)   // a layering rule the project graph already honours is enforced by the compiler
                 d7.Add(new Finding("architecture-rules-unenforced", "D7", $"{Path.GetFileName(doc)} records a dependency or layering rule, no architecture test or analyzer enforces it, and the code already breaks the layering", doc, null, null, 1));
+            else if (enforcement.Length == 0 && !archTests && Regex.IsMatch(text, @"(?i)\b(never|must not|may not|shall not|do(es)? not)\s+(take|inject|reference|use|call|reach|depend on|touch)\s+(the\s+)?`?(\w*DbContext|repositor(y|ies)|infrastructure|\w+Context)\b|\bonly (through|via) (the\s+)?(repositor(y|ies)|application handlers?|handlers?|query (service|interface)s?|`?IUnitOfWork)"))   // a prohibition on which TYPES may be taken or called is invisible to the compiler: only a test or an analyzer can hold it
+                d7.Add(new Finding("architecture-rules-unenforced", "D7", $"{Path.GetFileName(doc)} records a type-level rule (which types may call or inject which) and no architecture test or analyzer checks it: review is the only enforcement", doc, null, null, 3));
         }
         var enforced = archTests;
         foreach (var f in d7) ctx.Add(f);
@@ -149,6 +151,25 @@ public static class Architecture
             var trees = pc.Trees.Where(t => !pc.IsGenerated(t)).ToList();
             foreach (var tree in trees) foreach (var ns in tree.GetRoot().DescendantNodes().OfType<BaseNamespaceDeclarationSyntax>()) declared.Add(ns.Name.ToString());
             string Sub(string ns) { var root = pc.Project.Name; return ns.StartsWith(root + ".", StringComparison.Ordinal) ? ns[(root.Length + 1)..].Split('.')[0] : ns == root ? "" : ns.Split('.').Last(); }
+            // a persistence hub (DbContext, repositories, mappings, migrations, queries) is reached by everything that stores and reads, and reaches every stored type: it is plumbing, not a module with a boundary
+            var hubTypes = new Dictionary<string, (int persistence, int all)>(StringComparer.Ordinal);
+            foreach (var tree in trees)
+            {
+                var ns0 = tree.GetRoot().DescendantNodes().OfType<BaseNamespaceDeclarationSyntax>().FirstOrDefault()?.Name.ToString(); if (ns0 is null) continue;
+                var sub0 = Sub(ns0); if (sub0.Length == 0) continue;
+                var relPath = ctx.Workspace.RelPath(tree.FilePath);
+                foreach (var td in tree.GetRoot().DescendantNodes().OfType<TypeDeclarationSyntax>())
+                {
+                    var c = hubTypes.GetValueOrDefault(sub0);
+                    var persistence = Regex.IsMatch(td.Identifier.Text, @"(Repository|DbContext|Store|Configuration|Migration|ModelSnapshot|UnitOfWork|Queries|Documents?|Mapper|Mapping)$") || relPath.Contains("/Migrations/", StringComparison.Ordinal);
+                    hubTypes[sub0] = (c.persistence + (persistence ? 1 : 0), c.all + 1);
+                }
+            }
+            bool Hub(string sub) => hubTypes.TryGetValue(sub, out var c) && c.all > 0 && c.persistence * 2 >= c.all;
+            // a file that only declares data (records, enums, property-only classes, interfaces) is a shared contract: depending on it is not a cycle in behaviour
+            var byRel = trees.ToDictionary(t => ctx.Workspace.RelPath(t.FilePath), t => t, StringComparer.Ordinal);
+            bool DataOnly(string rel) => byRel.TryGetValue(rel, out var t) && t.GetRoot().DescendantNodes().OfType<BaseTypeDeclarationSyntax>().All(td => td is EnumDeclarationSyntax or InterfaceDeclarationSyntax || td is RecordDeclarationSyntax r && !r.Members.OfType<MethodDeclarationSyntax>().Any() || td is TypeDeclarationSyntax c && !c.Members.OfType<MethodDeclarationSyntax>().Any() && !c.Members.OfType<ConstructorDeclarationSyntax>().Any(k => k.Body?.Statements.Count > 2));
+            var dataEdges = new HashSet<(string from, string to)>();
             var graph = ctx.Graph;
             foreach (var tree in trees)
             {
@@ -163,11 +184,11 @@ public static class Architecture
                     var to = Sub(depNs); if (to.Length == 0 || to == from) continue;
                     var u = root.DescendantNodes().OfType<UsingDirectiveSyntax>().FirstOrDefault(x => x.Name?.ToString() == depNs);
                     var site = u is not null ? Cs.Line(u) : Cs.Line(root.DescendantTokens().FirstOrDefault(t => t.IsKind(SyntaxKind.IdentifierToken) && graph.DeclaredTypes[dep].Contains(t.Text)));
-                    edges.TryAdd((from, to), (rel, site));
+                    if (edges.TryAdd((from, to), (rel, site)) && DataOnly(dep)) dataEdges.Add((from, to)); else if (!DataOnly(dep)) dataEdges.Remove((from, to));
                 }
             }
             foreach (var ((from, to), site) in edges.OrderBy(e => e.Key.from, StringComparer.Ordinal).ThenBy(e => e.Key.to, StringComparer.Ordinal))
-                if (string.CompareOrdinal(from, to) < 0 && edges.ContainsKey((to, from)))
+                if (string.CompareOrdinal(from, to) < 0 && edges.ContainsKey((to, from)) && !Hub(from) && !Hub(to) && !dataEdges.Contains((from, to)) && !dataEdges.Contains((to, from)))
                     findings.Add(new Finding("module-dependency-cycle", "AX3", $"{pc.Project.Name}: namespaces {from} and {to} use each other ({Path.GetFileName(site.file)} ↔ {Path.GetFileName(edges[(to, from)].file)}): a boundary that only exists on paper", site.file, site.line, site.line, 1));
         }
         return findings;
@@ -457,13 +478,20 @@ public static class Architecture
         var slices = graph.FileProject.Keys.Select(SliceOf).Where(s => s is not null).Distinct().ToList();
         if (slices.Count < 2) { ctx.Skip("AX7", "no vertical-slice layout (Features/<slice>/) with two or more slices"); return; }
         var findings = new List<Finding>();
+        // a slice's Contracts / Abstractions / Messages project is its published surface: using it is how slices are MEANT to talk
+        bool PublishedSurface(string dep) => graph.FileProject.TryGetValue(dep, out var proj) && Regex.IsMatch(System.IO.Path.GetFileNameWithoutExtension(proj), @"(?i)\.(Contracts|Abstractions|Public|Messages|Events|Shared|Api|Client)$");
+        // type names collide across slices (every slice may have a Game); a reference is real only when the file's project references the other file's project
+        var reach = ctx.Repo.Projects.ToDictionary(p => p.Path, p => Workspace.TransitiveReferences(p, ctx.Repo).Append(p.Path).ToHashSet(StringComparer.Ordinal), StringComparer.Ordinal);
+        bool ReallyReferences(string file, string dep) => graph.FileProject.TryGetValue(file, out var fp) && graph.FileProject.TryGetValue(dep, out var dp) && reach.TryGetValue(fp, out var set) && set.Contains(dp);
         foreach (var file in graph.FileProject.Keys.OrderBy(f => f, StringComparer.Ordinal))
         {
             var mine = SliceOf(file); if (mine is null || Regex.IsMatch(mine, "(?i)^(shared|common|core|infrastructure)$")) continue;
+            var seen = new HashSet<string>(StringComparer.Ordinal);   // one finding per (file, foreign slice)
             foreach (var dep in graph.References[file].OrderBy(f => f, StringComparer.Ordinal))
             {
                 var theirs = SliceOf(dep);
                 if (theirs is null || theirs == mine || Regex.IsMatch(theirs, "(?i)^(shared|common|core|infrastructure)$")) continue;
+                if (PublishedSurface(dep) || !ReallyReferences(file, dep) || !seen.Add(theirs)) continue;
                 var tree = ctx.Workspace.ProductionTrees.First(t => ctx.Workspace.RelPath(t.tree.FilePath) == file).tree;
                 var theirTypes = graph.DeclaredTypes[dep];
                 var site = tree.GetRoot().DescendantTokens().FirstOrDefault(t => t.IsKind(SyntaxKind.IdentifierToken) && theirTypes.Contains(t.Text) && t.Parent is not UsingDirectiveSyntax && !t.Parent!.Ancestors().Any(a => a is UsingDirectiveSyntax));

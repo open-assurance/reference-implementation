@@ -60,7 +60,9 @@ public static class Maturity
                 var top = d.MaxBy(kv => kv.Value);
                 // a silo is knowledge held by ONE PERSON WHO IS STILL HERE: every commit by one author, and that author active;
                 // a departed author's file is orphaned (D34), not concentrated
-                if (d.Count == 1 && lastActive[top.Key] >= activeCutoff)
+                var fileTouches = h.Touching(f).ToList();
+                var longLived = fileTouches.Count >= 4 && (fileTouches.Max(c => c.Date) - fileTouches.Min(c => c.Date)).TotalDays >= 60;   // one author across several changes over months; a file written in one sprint by whoever picked it up is not a silo
+                if (d.Count == 1 && longLived && lastActive[top.Key] >= activeCutoff)
                 {
                     soloLoc += size;
                     silos.Add(new Finding("knowledge-concentration", "D16", $"{Path.GetFileName(f)} ({size} LOC, used by {graph.FanIn(f)} other files) has been written and changed by one contributor only", f, null, null, size >= 200 ? 2 : 1));

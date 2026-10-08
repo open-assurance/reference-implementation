@@ -13,6 +13,7 @@ public static class Detectors
         Domain.Run,
         Security.Run,
         Iac.Run,
+        Accessibility.Run,
         Readiness.Run,
     };
 }

@@ -79,7 +79,7 @@ public static class Iac
         {
             var text = ctx.Repo.Text(f);
             if (!Regex.IsMatch(text, @"(?m)^kind:\s*(Deployment|StatefulSet|DaemonSet|CronJob|Job)")) continue;
-            if (text.Contains(stem, StringComparison.OrdinalIgnoreCase) && Regex.IsMatch(text, @"livenessProbe|readinessProbe|startupProbe")) return true;
+            if (text.Contains(stem, StringComparison.OrdinalIgnoreCase)) return true;   // the orchestrator ignores HEALTHCHECK; missing probes are reported on the workload itself
         }
         return false;
     }
@@ -111,7 +111,7 @@ public static class Iac
                 if (sc is null && podSc is null) findings.Add(new Finding("container-security-context-missing", "D31", $"{name} declares no securityContext: runs as the image's default user with every default capability", file, L(c), null, 1));
                 if (Bool(sc, "privileged", false)) findings.Add(new Finding("privileged-container", "D31", $"{name} is privileged: equivalent to root on the node", file, L(sc!), null, 3));
                 var runAsNonRoot = Bool(sc, "runAsNonRoot", Bool(podSc, "runAsNonRoot", false)); var runAsUser = Str(sc, "runAsUser") ?? Str(podSc, "runAsUser");
-                if (!runAsNonRoot && (runAsUser is null || runAsUser == "0") && (sc is not null || podSc is not null)) findings.Add(new Finding("container-runs-as-root", "D31", $"{name} may run as root: neither runAsNonRoot nor a non-zero runAsUser is set", file, L(sc ?? podSc!), null, 2));
+                if (!runAsNonRoot && (runAsUser is null || runAsUser == "0") && (sc is not null || podSc is not null) && !Bool(sc, "privileged", false)) findings.Add(new Finding("container-runs-as-root", "D31", $"{name} may run as root: neither runAsNonRoot nor a non-zero runAsUser is set", file, L(sc ?? podSc!), null, 2));
                 if (Bool(sc, "allowPrivilegeEscalation", true) && sc is not null && !Bool(sc, "privileged", false)) findings.Add(new Finding("container-privilege-escalation-allowed", "D31", $"{name} leaves allowPrivilegeEscalation at its default (true)", file, L(sc), null, 1));
                 var caps = Map(sc, "capabilities");
                 var adds = Seq(caps, "add")?.OfType<YamlScalarNode>().Select(x => x.Value).ToList() ?? new();
@@ -147,6 +147,30 @@ public static class Iac
         else if (kind is "ClusterRoleBinding" or "RoleBinding")
         {
             if (Str(Map(d.Root, "roleRef"), "name") is "cluster-admin" or "admin") findings.Add(new Finding("overly-permissive-rbac", "D31", $"{kind} binds {Str(Map(d.Root, "roleRef"), "name")}", file, L(d.Root), null, 2));
+        }
+        else if (kind is "Secret")
+        {
+            foreach (var (section, encoded) in new[] { ("data", true), ("stringData", false) })
+            {
+                var map = Map(d.Root, section); if (map is null) continue;
+                foreach (var (k, v) in map.Children)
+                {
+                    if (v is not YamlScalarNode sv || sv.Value is null) continue;
+                    var value = sv.Value;
+                    if (encoded) { try { value = System.Text.Encoding.UTF8.GetString(Convert.FromBase64String(value.Trim())); } catch (FormatException) { continue; } }
+                    if (value.Length < 8 || Regex.IsMatch(value, @"^\$\{|^<|^\{\{|placeholder|changeme|REPLACE", RegexOptions.IgnoreCase)) continue;
+                    var keyName = (k as YamlScalarNode)?.Value ?? "";
+                    var hit = Secrets.Scan($"{keyName}: {value}\n", file).FirstOrDefault();
+                    if (hit.concept is null && Regex.IsMatch(keyName, @"(?i)token|secret|password|key|credential") && Secrets.Entropy(value) >= 3.0) hit = ("hardcoded-credential", "secret material in a committed manifest", 1, keyName, 2);
+                    if (hit.concept is not null) findings.Add(new Finding(hit.concept, "D31", $"kind: Secret `{Str(Map(d.Root, "metadata"), "name")}` carries {keyName} in the repository ({(encoded ? "base64 is an encoding, not encryption" : "in clear text")}): anyone who can read the repository holds it", file, L(v), null, 2));
+                }
+            }
+        }
+        else if (kind is "Ingress")
+        {
+            var spec = Map(d.Root, "spec");
+            if (Seq(spec, "tls") is null && !(Map(Map(d.Root, "metadata"), "annotations")?.Children.Keys.OfType<YamlScalarNode>().Any(a => a.Value?.Contains("ssl-redirect") == true || a.Value?.Contains("cert-manager") == true) ?? false))
+                findings.Add(new Finding("cleartext-transmission", "D31", $"Ingress {Str(Map(d.Root, "metadata"), "name")} has no tls: section: the service is served over plain HTTP at the edge", file, L(spec ?? d.Root), null, 2));
         }
         else if (kind is "Service")
         {
@@ -201,9 +225,15 @@ public static class Iac
             var topWrite = topPermissions is YamlScalarNode tps && tps.Value is "write-all" || topPermissions is YamlMappingNode tpm && tpm.Children.Values.OfType<YamlScalarNode>().Any(v => v.Value == "write");
             var triggers = root is not null && root.Children.TryGetValue(new YamlScalarNode("on"), out var on) ? on.ToString() : text;
             var prTarget = Regex.IsMatch(text, @"pull_request_target|workflow_run");
+            var inRun = false; var runIndent = -1;
             for (var i = 0; i < lines.Length; i++)
             {
                 var l = lines[i];
+                var indent = l.Length - l.TrimStart().Length;
+                if (Regex.IsMatch(l, @"^\s*run:\s*[|>]")) { inRun = true; runIndent = indent; }
+                else if (inRun && l.Trim().Length > 0 && indent <= runIndent) inRun = false;
+                if (inRun && Regex.IsMatch(l, @"\$\{\{\s*secrets\.\w+\s*\}\}") && !Regex.IsMatch(l, @"^\s*run:"))
+                    findings.Add(new Finding("secret-in-process-arguments", "D36", $"a secret is expanded into the shell script: {Trunc(l.Trim(), 70)} (it lands in the generated script and in the argv of the process it is passed to; bind it through env:)", wf, i + 1, i + 1, 1));
                 var uses = Regex.Match(l, @"^\s*-?\s*uses:\s*([\w.-]+/[\w./-]+)@(\S+)");
                 if (uses.Success)
                 {
@@ -216,8 +246,8 @@ public static class Iac
                 // expression injection: untrusted event data interpolated into a run script
                 if (Regex.IsMatch(l, @"\$\{\{\s*github\.event\.(issue|pull_request|comment|review|discussion|commits?|head_commit|inputs|pages)\.[^}]*(title|body|message|ref|label|name|email|login|branch|default_branch|head_ref)[^}]*\}\}|\$\{\{\s*github\.head_ref\s*\}\}|\$\{\{\s*github\.event\.inputs\.\w+\s*\}\}"))
                 {
-                    var inRun = Enumerable.Range(Math.Max(0, i - 6), 7).Any(j => Regex.IsMatch(lines[j], @"^\s*run:\s*[|>]?")) || Regex.IsMatch(l, @"^\s*run:");
-                    if (inRun) findings.Add(new Finding("ci-workflow-injection", "D36", $"untrusted event data expanded into a shell step: {Trunc(l.Trim(), 70)}", wf, i + 1, i + 1, 2));
+                    var inRunStep = Enumerable.Range(Math.Max(0, i - 6), 7).Any(j => Regex.IsMatch(lines[j], @"^\s*run:\s*[|>]?")) || Regex.IsMatch(l, @"^\s*run:");
+                    if (inRunStep) findings.Add(new Finding("ci-workflow-injection", "D36", $"untrusted event data expanded into a shell step: {Trunc(l.Trim(), 70)}", wf, i + 1, i + 1, 2));
                 }
                 if (Regex.IsMatch(l, @"^\s*run:.*\$\{\{\s*secrets\.\w+\s*\}\}") || Regex.IsMatch(l, @"^\s*run:.*\$\{\{\s*secrets\.") || Regex.IsMatch(l, @"^\s*-\s*(\S+\s+)?\$\{\{\s*secrets\.\w+\s*\}\}") )
                     findings.Add(new Finding("secret-in-process-arguments", "D36", $"a secret is expanded into a command line: {Trunc(l.Trim(), 70)} (it reaches the script file and the argv of every process it starts; pass it through env:)", wf, i + 1, i + 1, 1));
@@ -271,8 +301,11 @@ public static class Iac
         var seccomp = workloads.Count(d => ctx.Repo.Text(d.File).Contains("seccompProfile")); var mac = workloads.Count(d => Regex.IsMatch(ctx.Repo.Text(d.File), @"apparmor|appArmorProfile|seLinuxOptions"));
         if (seccomp == 0 && mac == 0) ctx.Skip("D41", "reward-only: no seccomp or AppArmor/SELinux confinement to credit");
         else ctx.Measure("D41", Math.Round(10 * (0.6 * seccomp + 0.4 * mac) / workloads.Count, 1), note: $"{seccomp}/{workloads.Count} workloads with seccomp, {mac} with a MAC profile");
-        var runtime = Regex.IsMatch(allText, @"(?i)kind:\s*(ClusterPolicy|Policy)\b[\s\S]{0,200}kyverno|kind:\s*Constraint|ConstraintTemplate|gatekeeper|TracingPolicy|tetragon|falco|pod-security\.kubernetes\.io/enforce");
-        if (!runtime) ctx.Skip("D42", "reward-only: no admission policy or runtime detection engine to credit");
-        else ctx.Measure("D42", Regex.IsMatch(allText, @"(?i)tetragon|falco") && Regex.IsMatch(allText, @"(?i)kyverno|gatekeeper|pod-security\.kubernetes\.io/enforce") ? 10 : 7, note: "runtime threat enforcement wired");
+        var agent = Regex.IsMatch(allText, @"(?i)tetragon|TracingPolicy|falco|sysdig|microsoft-defender|kubearmor|neuvector|aqua-enforcer");
+        var admission = Regex.IsMatch(allText, @"(?i)kind:\s*(ClusterPolicy|Policy)\b[\s\S]{0,200}kyverno|kind:\s*Constraint|ConstraintTemplate|gatekeeper|policy-controller|cosign|sigstore|ImagePolicyWebhook|ClusterImagePolicy|ValidatingAdmissionPolicy");
+        var psa = Regex.Match(allText, @"pod-security\.kubernetes\.io/enforce:\s*(\w+)");
+        var psaCredit = !psa.Success ? 0.0 : psa.Groups[1].Value == "restricted" ? 0.2 : 0.1;
+        if (!agent && !admission && !psa.Success) ctx.Skip("D42", "reward-only: no admission policy, Pod Security Admission or runtime detection engine to credit");
+        else ctx.Measure("D42", Math.Round(10 * ((agent ? 0.5 : 0) + (admission ? 0.3 : 0) + psaCredit), 1), note: $"runtime detection agent: {agent}; admission policy / signed-image gate: {admission}; Pod Security Admission: {(psa.Success ? psa.Groups[1].Value : "none")}");
     }
 }

@@ -30,6 +30,7 @@ public sealed class ProjectInfo
     public List<(string id, string? version)> Packages { get; init; } = new();
     public List<string> ProjectReferences { get; init; } = new();   // repo-relative csproj paths
     public List<string> SourceFiles { get; init; } = new();         // repo-relative .cs
+    public List<Regex> CompileRemove { get; init; } = new();        // <Compile Remove="..."> globs, relative to the project directory
     public List<string> MarkupFiles { get; init; } = new();         // repo-relative .razor/.cshtml
     public ProjectRole Role { get; set; }
     public bool IsProduction => Role is not (ProjectRole.Test or ProjectRole.Benchmark);
@@ -110,7 +111,8 @@ public sealed class Repository
         {
             files = System.IO.Directory.EnumerateFiles(root, "*", SearchOption.AllDirectories)
                 .Select(f => System.IO.Path.GetRelativePath(root, f).Replace('\\', '/'))
-                .Where(f => !f.StartsWith(".git/") && !f.Contains("/bin/") && !f.Contains("/obj/") && !f.StartsWith("bin/") && !f.StartsWith("obj/") && !f.Contains("/node_modules/"))
+                // without git to say what is tracked: skip build output, package caches, IDE state and this engine's own output directory
+                .Where(f => !Regex.IsMatch(f, @"(^|/)(\.git|\.cai-ref|\.vs|\.idea|bin|obj|node_modules|TestResults)/"))
                 .OrderBy(f => f, StringComparer.Ordinal).ToList();
         }
         var repo = new RepositoryBuilder(root, files, head, headDate, hasGit);
@@ -151,6 +153,8 @@ public sealed class Repository
                 if (f.Contains("/obj/") || f.Contains("/bin/") || f.StartsWith("obj/") || f.StartsWith("bin/")) continue;
                 var owner = byDir.FirstOrDefault(p => p.Directory.Length == 0 || f.StartsWith(p.Directory + "/", StringComparison.Ordinal));
                 if (owner is null) continue;
+                var inProject = owner.Directory.Length == 0 ? f : f[(owner.Directory.Length + 1)..];
+                if (owner.CompileRemove.Any(rx => rx.IsMatch(inProject))) continue;   // <Compile Remove>: templates and vendored sources the compiler never sees
                 if (isCs) owner.SourceFiles.Add(f); else owner.MarkupFiles.Add(f);
             }
             foreach (var p in projects) p.Role = Classify(p, projects);
@@ -178,9 +182,12 @@ public sealed class Repository
                 if (_files.Contains(candidate) && SafeXml(Read(candidate)) is { } x) props.Insert(0, x);
             }
             var all = props.Append(doc).ToList();
-            string? Prop(string name) => all.SelectMany(x => x.Descendants().Where(e => e.Name.LocalName == name && !e.HasElements)).Select(e => e.Value.Trim()).LastOrDefault(v => v.Length > 0);
+            var projectName = System.IO.Path.GetFileNameWithoutExtension(rel);
+            // only groups whose Condition holds for THIS project contribute (a shared Directory.Build.props scopes test defaults by project name)
+            IEnumerable<XElement> Elems(string localName) => all.SelectMany(x => x.Descendants().Where(e => e.Name.LocalName == localName && MsBuildCondition.Applies(e, projectName)));
+            string? Prop(string name) => Elems(name).Where(e => !e.HasElements).Select(e => e.Value.Trim()).LastOrDefault(v => v.Length > 0);
             var tfms = (Prop("TargetFrameworks") ?? Prop("TargetFramework") ?? "").Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).ToList();
-            var packages = all.SelectMany(x => x.Descendants().Where(e => e.Name.LocalName == "PackageReference"))
+            var packages = Elems("PackageReference")
                 .Select(e => (id: e.Attribute("Include")?.Value ?? e.Attribute("Update")?.Value ?? "", version: e.Attribute("Version")?.Value ?? e.Element(e.Name.Namespace + "Version")?.Value))
                 .Where(p => p.id.Length > 0)
                 .Select(p => (p.id, p.version ?? central.GetValueOrDefault(p.id)))
@@ -199,7 +206,8 @@ public sealed class Repository
                 TargetFrameworks = tfms, OutputType = Prop("OutputType"),
                 Nullable = string.Equals(Prop("Nullable"), "enable", StringComparison.OrdinalIgnoreCase),
                 ImplicitUsings = Prop("ImplicitUsings") is { } iu && (iu.Equals("enable", StringComparison.OrdinalIgnoreCase) || iu.Equals("true", StringComparison.OrdinalIgnoreCase)),
-                ExtraUsings = all.SelectMany(x => x.Descendants().Where(e => e.Name.LocalName == "Using" && e.Attribute("Include") is not null && e.Attribute("Remove") is null)).Select(e => e.Attribute("Include")!.Value.Trim()).Where(u => u.Length > 0 && !u.StartsWith("$")).ToList(),
+                ExtraUsings = Elems("Using").Where(e => e.Attribute("Include") is not null && e.Attribute("Remove") is null).Select(e => e.Attribute("Include")!.Value.Trim()).Where(u => u.Length > 0 && !u.StartsWith("$")).ToList(),
+                CompileRemove = Elems("Compile").Select(e => e.Attribute("Remove")?.Value).Where(v => !string.IsNullOrWhiteSpace(v) && !v!.Contains("$(")).Select(v => GlobToRegex(v!)).ToList(),
                 IsTestProject = isTest,
                 IsPackable = string.Equals(Prop("IsPackable"), "true", StringComparison.OrdinalIgnoreCase) || string.Equals(Prop("GeneratePackageOnBuild"), "true", StringComparison.OrdinalIgnoreCase) || Prop("PackageId") is not null,
                 Version = Prop("Version") ?? Prop("VersionPrefix"),
@@ -208,9 +216,24 @@ public sealed class Repository
                 TreatWarningsAsErrors = string.Equals(Prop("TreatWarningsAsErrors"), "true", StringComparison.OrdinalIgnoreCase),
                 NoWarn = (Prop("NoWarn") ?? "").Split(new[] { ';', ',' }, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).Where(w => !w.StartsWith("$")).ToList(),
                 WarningsNotAsErrors = (Prop("WarningsNotAsErrors") ?? "").Split(new[] { ';', ',' }, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).Where(w => !w.StartsWith("$")).ToList(),
-                DefineConstants = all.SelectMany(x => x.Descendants().Where(e => e.Name.LocalName == "DefineConstants")).SelectMany(e => e.Value.Split(';')).Select(s => s.Trim()).Where(s => s.Length > 0 && !s.StartsWith("$")).Distinct().ToList(),
+                DefineConstants = Elems("DefineConstants").SelectMany(e => e.Value.Split(';')).Select(s => s.Trim()).Where(s => s.Length > 0 && !s.StartsWith("$")).Distinct().ToList(),
                 Packages = packages, ProjectReferences = projRefs,
             };
+        }
+
+        /// <summary>An MSBuild item glob (`**` any depth, `*` within a segment, `\` or `/`) as a regex over the project-relative path.</summary>
+        private static Regex GlobToRegex(string glob)
+        {
+            var g = glob.Replace('\\', '/').Trim().TrimStart('.', '/');
+            var sb = new System.Text.StringBuilder("^");
+            for (var i = 0; i < g.Length; i++)
+            {
+                if (g[i] == '*' && i + 1 < g.Length && g[i + 1] == '*') { sb.Append(".*"); i++; if (i + 1 < g.Length && g[i + 1] == '/') i++; }
+                else if (g[i] == '*') sb.Append("[^/]*");
+                else if (g[i] == '?') sb.Append("[^/]");
+                else sb.Append(Regex.Escape(g[i].ToString()));
+            }
+            return new Regex(sb.Append(g.EndsWith("**") ? "" : "$").ToString(), RegexOptions.IgnoreCase | RegexOptions.Compiled);
         }
 
         private static string NormalizePath(string dir, string include)
@@ -233,8 +256,14 @@ public sealed class Repository
             if (p.IsTestProject || IsTestPath(p.Path)) return p.HasPackage("BenchmarkDotNet") ? ProjectRole.Benchmark : ProjectRole.Test;
             if (p.HasPackage("BenchmarkDotNet") || n.EndsWith(".benchmarks") || n.EndsWith(".benchmark")) return ProjectRole.Benchmark;
             if (p.Sdk.Contains("Web", StringComparison.OrdinalIgnoreCase) || p.Sdk.Contains("BlazorWebAssembly", StringComparison.OrdinalIgnoreCase) || p.Sdk.Contains("Razor", StringComparison.OrdinalIgnoreCase)) return ProjectRole.Web;
+            // the LAST name segment is the most specific statement of a project's role (Company.Kernel.Runtime is a runtime, not a kernel);
+            // a project that carries a database or broker driver is infrastructure whatever it is called
+            var last = "." + n.Split('.').Last();
+            if (Regex.IsMatch(last, @"^\.(runtime|infrastructure|infra|persistence|data|dataaccess|messaging|storage|adapters?|external|integrations?|efcore|marten|dapper|mongo|redis)$")) return ProjectRole.Infrastructure;
+            if (Regex.IsMatch(last, @"^\.(contracts|abstractions|shared|common|messages|events|dto|dtos|client|sdk|generators?|analyzers?)$")) return ProjectRole.Library;
             if (Regex.IsMatch(n, @"\.(domain|core|model|models|entities|kernel|sharedkernel)(\.|$)")) return ProjectRole.Domain;
             if (Regex.IsMatch(n, @"\.(application|app|usecases|services|handlers|features)(\.|$)")) return ProjectRole.Application;
+            if (p.Packages.Any(x => Regex.IsMatch(x.id, @"(?i)^(Marten|Microsoft\.EntityFrameworkCore(\..*)?|Npgsql(\..*)?|Dapper|MongoDB\.Driver|RabbitMQ\.Client|MassTransit(\..*)?|StackExchange\.Redis|Confluent\.Kafka|Azure\.Messaging\..*|AWSSDK\..*)$")) && !Regex.IsMatch(n, @"\.(api|web|server|host|worker)(\.|$)")) return ProjectRole.Infrastructure;
             if (Regex.IsMatch(n, @"\.(infrastructure|infra|persistence|data|dataaccess|messaging|storage|adapters?|external|integrations?)(\.|$)")) return ProjectRole.Infrastructure;
             if (Regex.IsMatch(n, @"\.(worker|workers|jobs|host|hosting|service|functions)(\.|$)") || p.HasPackage("Microsoft.Extensions.Hosting") && p.OutputType?.Equals("Exe", StringComparison.OrdinalIgnoreCase) == true) return ProjectRole.Worker;
             if (Regex.IsMatch(n, @"\.(cli|tool|tools|console|migrator|importer|exporter)(\.|$)") || dir.StartsWith("tools/")) return ProjectRole.Tool;
@@ -258,5 +287,70 @@ public static class Git
         if (!p.WaitForExit(timeoutMs)) { try { p.Kill(true); } catch { } stdout = ""; return -1; }
         stdout = outTask.Result; _ = errTask.Result;
         return p.ExitCode;
+    }
+}
+
+
+/// <summary>
+/// The subset of MSBuild conditions a props chain uses to scope groups to projects: string (in)equality, And/Or/!, parentheses,
+/// and $(MSBuildProjectName) with .Contains/.StartsWith/.EndsWith. Every other property is undefined, hence empty, as in MSBuild.
+/// A condition this evaluator cannot parse is treated as not holding.
+/// </summary>
+public static class MsBuildCondition
+{
+    public static bool Applies(XElement e, string projectName)
+    {
+        for (var x = e; x is not null; x = x.Parent)
+        {
+            var c = x.Attribute("Condition")?.Value;
+            if (c is not null && !Evaluate(c, projectName)) return false;
+        }
+        return true;
+    }
+
+    public static bool Evaluate(string condition, string projectName)
+    {
+        try { var p = new Parser(Substitute(condition, projectName)); var v = p.ParseOr(); p.ExpectEnd(); return IsTrue(v); }
+        catch (FormatException) { return false; }
+    }
+
+    private static string Substitute(string c, string name)
+    {
+        c = Regex.Replace(c, @"\$\(MSBuildProjectName\.Contains\('([^']*)'\)\)", m => name.Contains(m.Groups[1].Value, StringComparison.OrdinalIgnoreCase) ? "true" : "false", RegexOptions.IgnoreCase);
+        c = Regex.Replace(c, @"\$\(MSBuildProjectName\.StartsWith\('([^']*)'\)\)", m => name.StartsWith(m.Groups[1].Value, StringComparison.OrdinalIgnoreCase) ? "true" : "false", RegexOptions.IgnoreCase);
+        c = Regex.Replace(c, @"\$\(MSBuildProjectName\.EndsWith\('([^']*)'\)\)", m => name.EndsWith(m.Groups[1].Value, StringComparison.OrdinalIgnoreCase) ? "true" : "false", RegexOptions.IgnoreCase);
+        c = Regex.Replace(c, @"\$\(MSBuildProjectName\)", name, RegexOptions.IgnoreCase);
+        c = Regex.Replace(c, @"\$\([^()]*(\([^()]*\)[^()]*)*\)", "");   // any other property: undefined → empty
+        return c;
+    }
+
+    private static bool IsTrue(string v) => v.Equals("true", StringComparison.OrdinalIgnoreCase);
+
+    private sealed class Parser(string s)
+    {
+        private int _i;
+        private void Ws() { while (_i < s.Length && char.IsWhiteSpace(s[_i])) _i++; }
+        private bool Word(string w) { Ws(); if (string.Compare(s, _i, w, 0, w.Length, StringComparison.OrdinalIgnoreCase) == 0 && (_i + w.Length == s.Length || !char.IsLetterOrDigit(s[_i + w.Length]))) { _i += w.Length; return true; } return false; }
+        private bool Sym(string w) { Ws(); if (string.CompareOrdinal(s, _i, w, 0, w.Length) == 0) { _i += w.Length; return true; } return false; }
+        public void ExpectEnd() { Ws(); if (_i != s.Length) throw new FormatException(); }
+        public string ParseOr() { var v = ParseAnd(); while (Word("or")) { var r = ParseAnd(); v = IsTrue(v) || IsTrue(r) ? "true" : "false"; } return v; }
+        private string ParseAnd() { var v = ParseNot(); while (Word("and")) { var r = ParseNot(); v = IsTrue(v) && IsTrue(r) ? "true" : "false"; } return v; }
+        private string ParseNot() { if (Sym("!") && !(_i < s.Length && s[_i] == '=')) return IsTrue(ParseNot()) ? "false" : "true"; return ParseCmp(); }
+        private string ParseCmp()
+        {
+            var l = Primary();
+            if (Sym("==")) return l.Equals(Primary(), StringComparison.OrdinalIgnoreCase) ? "true" : "false";
+            if (Sym("!=")) return l.Equals(Primary(), StringComparison.OrdinalIgnoreCase) ? "false" : "true";
+            return l;
+        }
+        private string Primary()
+        {
+            Ws();
+            if (Sym("(")) { var v = ParseOr(); if (!Sym(")")) throw new FormatException(); return v; }
+            if (_i < s.Length && s[_i] == '\'') { var end = s.IndexOf('\'', _i + 1); if (end < 0) throw new FormatException(); var v = s[(_i + 1)..end]; _i = end + 1; return v; }
+            var start = _i; while (_i < s.Length && (char.IsLetterOrDigit(s[_i]) || s[_i] is '.' or '_' or '-')) _i++;
+            if (_i == start) throw new FormatException();
+            return s[start.._i];
+        }
     }
 }

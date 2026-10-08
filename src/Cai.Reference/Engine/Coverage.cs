@@ -14,7 +14,6 @@ public static class Coverage
     public static readonly IReadOnlyDictionary<string, string> StaticReasons = new Dictionary<string, string>(StringComparer.Ordinal)
     {
         ["D8"] = "needs runtime: line coverage requires executing the test suite; static test reachability is reported as R4",
-        ["D39"] = "needs a successful compilation to IL; this engine does not restore packages, so third-party types stay unresolved and nothing can be emitted",
         ["D19"] = Llm, ["D20"] = Llm, ["D21"] = Llm, ["D22"] = Llm, ["D24"] = Llm, ["D25"] = Llm, ["M4"] = Llm,
         ["DM8"] = Llm, ["ED5"] = Llm, ["ES3"] = Llm, ["LA1"] = Llm, ["LA2"] = Llm, ["LA3"] = Llm, ["LA4"] = Llm, ["LA5"] = Llm, ["LA6"] = Llm,
         ["AXA1"] = Runtime, ["AXB1"] = Runtime, ["AXB2"] = Runtime, ["AXH1"] = Runtime, ["AXI1"] = Runtime, ["AXK1"] = Runtime, ["AXO1"] = Runtime, ["AXP1"] = Runtime, ["AXR1"] = Runtime, ["AXS1"] = Runtime,

@@ -125,7 +125,7 @@ public sealed class Workspace
     }
 
     /// <summary>ProjectReference is transitive in the SDK: a project sees every project its references see.</summary>
-    private static IEnumerable<string> TransitiveReferences(ProjectInfo p, Repository repo)
+    public static IEnumerable<string> TransitiveReferences(ProjectInfo p, Repository repo)
     {
         var byPath = repo.Projects.ToDictionary(x => x.Path, StringComparer.Ordinal);
         var seen = new HashSet<string>(StringComparer.Ordinal); var queue = new Queue<string>(p.ProjectReferences);

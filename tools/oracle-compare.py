@@ -38,7 +38,8 @@ def main():
         for k, ol in o['lenses'].items():
             if k not in ml: continue
             l = ml[k]
-            if abs(ol['score'] - round(l['score'], 1)) > 0.051: diffs.append(f"{k} score {ol['score']} vs {l['score']}")
+            # the oracle prints one decimal (rounded away from zero); compare against the exact value within half a display unit
+            if abs(ol['score'] - l['score']) > 0.051: diffs.append(f"{k} score {ol['score']} vs {l['score']}")
             band = l['band']
             if ol['band'] != band: diffs.append(f"{k} band {ol['band']} vs {band}")
             if ol['gated'] != l['criticalGated']: diffs.append(f"{k} gated {ol['gated']} vs {l['criticalGated']}")

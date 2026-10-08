@@ -122,7 +122,9 @@ public static class Domain
             {
                 idProps++;
                 var simple = Cs.Simple(pd.Type);
-                if (simple is "Guid" or "int" or "long" or "string" or "Int32" or "Int64" or "String") { if (m.IdTypes.Count > 0) ctx.Add(new Finding("primitive-entity-identifier", "DM2", $"{name}.{pd.Identifier.Text} is a raw {simple} while the domain has strongly-typed ids ({string.Join(", ", m.IdTypes.Take(3))}…): any id can be passed where this one is meant", rel, Cs.Line(pd), null, 1)); }
+                var stem = pd.Identifier.Text == "Id" ? name : pd.Identifier.Text[..^2];
+                var ownConcept = pd.Identifier.Text == "Id" || m.Entities.Any(e => e.EndsWith(stem, StringComparison.Ordinal)) || m.IdTypes.Any(t => t.EndsWith(stem + "Id", StringComparison.Ordinal));   // `Guid OrderId` in a service that has no Order is a reference into another service, carried as that service publishes it
+                if (simple is "Guid" or "int" or "long" or "string" or "Int32" or "Int64" or "String") { if (m.IdTypes.Count > 0 && ownConcept) ctx.Add(new Finding("primitive-entity-identifier", "DM2", $"{name}.{pd.Identifier.Text} is a raw {simple} while the domain has strongly-typed ids ({string.Join(", ", m.IdTypes.Take(3))}…): any id can be passed where this one is meant", rel, Cs.Line(pd), null, 1)); }
                 else typedIdProps++;
             }
             // DM5: public setters on entity state
@@ -135,7 +137,9 @@ public static class Domain
             // DM4: state and no behaviour, while a service drives it
             var behaviour = t.Members.OfType<MethodDeclarationSyntax>().Where(md => md.Modifiers.Any(SyntaxKind.PublicKeyword) && md.Identifier.Text is not ("ToString" or "Equals" or "GetHashCode" or "Apply" or "When") && !md.Modifiers.Any(SyntaxKind.StaticKeyword)).ToList();
             var props = t.Members.OfType<PropertyDeclarationSyntax>().Count();
-            if (behaviour.Count == 0 && props >= 3)
+            var validatingFactories = t.Members.OfType<MethodDeclarationSyntax>().Count(md => md.Modifiers.Any(SyntaxKind.StaticKeyword) && Cs.Simple(md.ReturnType) == name && Regex.IsMatch(md.Body?.ToString() ?? md.ExpressionBody?.ToString() ?? "", @"throw|ThrowIf|Guard|Validate"));
+            var computed = t.Members.OfType<PropertyDeclarationSyntax>().Count(pd => pd.ExpressionBody is not null || pd.AccessorList?.Accessors.Any(a => a.Body is not null || a.ExpressionBody is not null) == true);
+            if (behaviour.Count == 0 && validatingFactories == 0 && computed == 0 && props >= 3)
             {
                 var driver = m.Types.Keys.FirstOrDefault(k => k != name && Regex.IsMatch(k, $@"^{Regex.Escape(name)}(Service|Manager|Logic|Handler)s?$")) ?? m.Types.Keys.FirstOrDefault(k => k.EndsWith("Service") && m.Types[k].ToString().Contains(name + " ") );
                 anemic++;
@@ -178,6 +182,15 @@ public static class Domain
                 var props = cls.Members.OfType<PropertyDeclarationSyntax>().ToList();
                 if (props.Count < 2 || props.Count > 8 || cls.Members.OfType<PropertyDeclarationSyntax>().Any(pd => pd.Identifier.Text == "Id")) continue;
                 if (cls.Members.OfType<MethodDeclarationSyntax>().Count(md => md.Modifiers.Any(SyntaxKind.PublicKeyword) && md.Identifier.Text is not ("ToString" or "Equals" or "GetHashCode")) > 2) continue;
+                var identityLike = props.Any(pd => Regex.IsMatch(pd.Identifier.Text, @"^(\w*Id|\w*Number|\w*Key|Sequence\w*)$") && pd.AccessorList?.Accessors.All(a => !a.IsKind(SyntaxKind.SetAccessorDeclaration) || a.Modifiers.Count > 0) == true);
+                var factoryShaped = cls.Members.OfType<ConstructorDeclarationSyntax>().Any() && cls.Members.OfType<ConstructorDeclarationSyntax>().All(c => !c.Modifiers.Any(SyntaxKind.PublicKeyword)) && cls.Members.OfType<MethodDeclarationSyntax>().Any(md => md.Modifiers.Any(SyntaxKind.StaticKeyword) && Cs.Simple(md.ReturnType) == name);
+                if (identityLike || factoryShaped)
+                {
+                    // an identity, or a private constructor behind factories, makes this an entity: the question is whether its state is sealed
+                    var open = props.Where(pd => pd.AccessorList?.Accessors.Any(a => a.IsKind(SyntaxKind.SetAccessorDeclaration) && a.Modifiers.Count == 0) == true).ToList();
+                    if (open.Count > 0) ctx.Add(new Finding("publicly-mutable-entity-state", "DM5", $"{name} exposes {open.Count} public setter(s) ({string.Join(", ", open.Select(x => x.Identifier.Text).Take(4))}) beside its factory: state can be changed past the aggregate's own methods", rel, Cs.Line(open[0]), Cs.Line(open[^1]), open.Count));
+                    continue;
+                }
                 var publicSetters = props.Count(pd => pd.AccessorList?.Accessors.Any(a => a.IsKind(SyntaxKind.SetAccessorDeclaration) && a.Modifiers.Count == 0) == true);
                 var valueEquality = cls.Members.OfType<MethodDeclarationSyntax>().Any(md => md.Identifier.Text == "Equals") || cls.BaseList?.Types.Any(b => Cs.Simple(b.Type) is "ValueObject" or "IEquatable") == true;
                 if (publicSetters > 0 || !valueEquality)
@@ -380,8 +393,8 @@ public static class Domain
             var words = Regex.Split(stem, @"(?<=[a-z0-9])(?=[A-Z])").Where(w => w.Length > 0).ToList();
             if (words.Count == 0) continue;
             var last = words[^1];
-            var past = last.EndsWith("ed", StringComparison.OrdinalIgnoreCase) && last.Length > 3 || IrregularPast.Contains(last);
-            if (!past) { var (p, tree) = m.Owner[ev]; ed3.Add(new Finding("event-not-named-in-past-tense", "ED3", $"{ev} reads as an instruction, not a fact: an event names what happened ({last} is not a past participle)", ctx.Workspace.RelPath(tree.FilePath), Cs.Line(m.Types[ev]), null, 1)); }
+            var past = (words.Count > 1 ? words.Skip(1) : words).Any(w => w.EndsWith("ed", StringComparison.OrdinalIgnoreCase) && w.Length > 3 || IrregularPast.Contains(w));   // ConsignmentSentOutForDelivery: the verb need not be the last word
+            if (!past) { var (p, tree) = m.Owner[ev]; ed3.Add(new Finding("event-not-named-in-past-tense", "ED3", $"{ev} reads as an instruction, not a fact: an event names what happened (no word of it is a past participle; {last} is not)", ctx.Workspace.RelPath(tree.FilePath), Cs.Line(m.Types[ev]), null, 1)); }
         }
         foreach (var f in ed3) ctx.Add(f);
         if (events.Count == 0) ctx.Skip("ED3", "no event types"); else ctx.Measure("ED3", Shape.FromShare(1 - (double)ed3.Count / events.Count), note: $"{ed3.Count} of {events.Count} events not in the past tense");

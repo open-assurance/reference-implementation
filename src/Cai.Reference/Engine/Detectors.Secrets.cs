@@ -152,6 +152,8 @@ public static class Secrets
     private static bool Plausible(string value, Rule rule, string line)
     {
         if (Placeholder.IsMatch(value) || PlaceholderWord.IsMatch(value)) return false;
+        // a connection string carries other key=value pairs beside the password; `Password = settings.Password,` is code, not a credential
+        if (rule.Name.Contains("connection string") && (!Regex.IsMatch(line, @"(?i)\b(server|host|data source|user id|uid|user(name)?|database|initial catalog|port)\s*=") || Regex.IsMatch(value, @"^[A-Za-z_]\w*(\.[A-Za-z_]\w*)+,?$"))) return false;
         if (value.Contains("EXAMPLE") || value.Contains("Example")) return false;
         if (Regex.IsMatch(value, @"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$", RegexOptions.IgnoreCase)) return false;   // a GUID is an identifier
         if (Regex.IsMatch(value, @"^[0-9a-f]{64}$", RegexOptions.IgnoreCase) || Regex.IsMatch(value, @"^sha(256|512)-", RegexOptions.IgnoreCase)) return false;   // digests

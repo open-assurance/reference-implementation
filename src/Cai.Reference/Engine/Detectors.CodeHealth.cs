@@ -12,7 +12,7 @@ public static class CodeHealth
     {
         if (!ctx.Workspace.ProductionTrees.Any())
         {
-            foreach (var d in new[] { "D1", "D2", "D3", "R3", "D4", "X10", "D17", "GD1", "IC1", "X1", "X2", "PF3", "X3", "X4", "X23", "X5" }) ctx.Skip(d, "no production C# source to measure");
+            foreach (var d in new[] { "D1", "D2", "D3", "R3", "D4", "X10", "D17", "GD1", "IC1", "X1", "X2", "PF3", "X3", "X4", "X23", "X5", "D39" }) ctx.Skip(d, "no production C# source to measure");
             return;
         }
         Complexity(ctx); Size(ctx); Duplication(ctx); Debt(ctx); Async(ctx); Exceptions(ctx); Logging(ctx); Nullable(ctx);
@@ -32,16 +32,44 @@ public static class CodeHealth
                 var cog = Cognitive(body);
                 var loc = ctx.Loc(Cs.IdentifierOf(m));
                 var name = $"{Cs.TypeName(m)}.{Cs.NameOf(m)}";
-                if (cc > 20) ctx.Add(new Finding("high-cyclomatic-complexity", "D1", $"{name} has cyclomatic complexity {cc} (threshold 20): decisions counted per branch, with lookup-table switches counted once", loc.File, loc.Line, loc.Line, cc > 35 ? 2 : 1));
+                if (cc > 15) ctx.Add(new Finding("high-cyclomatic-complexity", "D1", $"{name} has cyclomatic complexity {cc} (threshold 15): decisions counted per branch, with lookup-table switches counted once", loc.File, loc.Line, loc.Line, cc > 30 ? 2 : 1));
                 if (cog > 15) ctx.Add(new Finding("high-cognitive-complexity", "D2", $"{name} has cognitive complexity {cog} (threshold 15): nesting-weighted branches, boolean-operator changes and recursion", loc.File, loc.Line, loc.Line, cog > 30 ? 2 : 1));
+                // D39: how much IL a body compiles to, estimated from its syntax (packages are not restored, so nothing is compiled to IL here)
+                var rel39 = ctx.Workspace.RelPath(tree.FilePath);
+                if (!Regex.IsMatch(rel39, @"(?i)/Migrations/|ModelSnapshot|\.Designer\.cs$|\.g\.cs$") && !Regex.IsMatch(name, @"^(Program|Startup)\.|ServiceCollection|\.(Add\w*Services?|Configure\w*|Up|Down|BuildModel|BuildTargetModel)$"))
+                {
+                    var il = IlProxy(body);
+                    if (il > 700) ctx.Add(new Finding("compiled-code-size", "D39", $"{name} compiles to roughly {il} IL instructions by syntactic estimate (threshold 700): {body.DescendantNodes().OfType<InvocationExpressionSyntax>().Count()} calls and {body.DescendantNodes().OfType<LiteralExpressionSyntax>().Count()} literals inlined into one body", loc.File, loc.Line, loc.Line, il > 1400 ? 2 : 1));
+                }
             }
         }
         ctx.Facts["methods"] = methods.ToString();
         ctx.Measure("D1", Shape.FromFindings(ctx.FindingsFor("D1"), ctx.ProductionKloc), note: $"{ctx.FindingsFor("D1").Count()} of {methods} methods over the budget");
+        ctx.Measure("D39", Shape.FromFindings(ctx.FindingsFor("D39"), ctx.ProductionKloc), confidence: 0.7, note: $"{ctx.FindingsFor("D39").Count()} of {methods} method bodies over ~700 estimated IL instructions (syntactic estimate, not compiled IL)");
         ctx.Measure("D2", Shape.FromFindings(ctx.FindingsFor("D2"), ctx.ProductionKloc), note: $"{ctx.FindingsFor("D2").Count()} of {methods} methods over the budget");
     }
 
     /// <summary>1 + decision points. A switch whose every section is a flat one-or-two-statement arm (a lookup table) counts once, not per label.</summary>
+    /// <summary>A syntactic stand-in for the IL a body compiles to: calls, member loads, literals, operators, allocations and interpolations each cost roughly what they cost the compiler.</summary>
+    public static int IlProxy(SyntaxNode body)
+    {
+        var n = 0;
+        foreach (var node in body.DescendantNodes(d => d is not AnonymousFunctionExpressionSyntax and not LocalFunctionStatementSyntax))
+            n += node switch
+            {
+                InvocationExpressionSyntax inv => 2 + inv.ArgumentList.Arguments.Count,
+                ObjectCreationExpressionSyntax or ImplicitObjectCreationExpressionSyntax or ArrayCreationExpressionSyntax or ImplicitArrayCreationExpressionSyntax => 3,
+                MemberAccessExpressionSyntax or LiteralExpressionSyntax or IdentifierNameSyntax => 1,
+                BinaryExpressionSyntax or AssignmentExpressionSyntax or PrefixUnaryExpressionSyntax or PostfixUnaryExpressionSyntax or CastExpressionSyntax => 1,
+                InterpolationSyntax => 3,
+                ElementAccessExpressionSyntax => 2,
+                ConditionalExpressionSyntax or IfStatementSyntax or SwitchSectionSyntax or SwitchExpressionArmSyntax => 2,
+                ReturnStatementSyntax or ThrowStatementSyntax or ThrowExpressionSyntax => 1,
+                _ => 0,
+            };
+        return n;
+    }
+
     public static int Cyclomatic(SyntaxNode body)
     {
         var cc = 1;
@@ -153,6 +181,8 @@ public static class CodeHealth
 
     // ---------- D4 / X10 ----------
     private sealed record Tok(string Text, int Line, string File);
+    /// <summary>Database-bound terminal operators (EF Core, Marten, Dapper-style): I/O whatever the receiver type resolves to without restored packages.</summary>
+    private static readonly Regex QueryTerminal = new(@"^(ToListAsync|ToArrayAsync|CountAsync|LongCountAsync|AnyAsync|AllAsync|FirstAsync|FirstOrDefaultAsync|SingleAsync|SingleOrDefaultAsync|SumAsync|MaxAsync|MinAsync|AverageAsync|ToDictionaryAsync|ExecuteUpdateAsync|ExecuteDeleteAsync|SaveChangesAsync|FindAsync|LoadAsync|ForEachAsync|ContainsAsync|QueryAsync|QueryFirstOrDefaultAsync|ExecuteAsync|ExecuteScalarAsync)$", RegexOptions.Compiled);
 
     private static void Duplication(ScanContext ctx)
     {
@@ -184,13 +214,17 @@ public static class CodeHealth
                 l.Add((rel, Cs.Line(cond)));
             }
         }
+        // which side of a clone is the copy? the file that entered the history later; files born together are reported on both sides
+        var history = ctx.History;
+        DateTimeOffset? Born(string file) => history.Available ? history.Touching(file).Select(c => (DateTimeOffset?)c.Date).Min() : null;
+        bool IsOriginal(string file, IEnumerable<string> others) { var mine = Born(file); return mine is not null && others.Select(Born).Any(o => o is not null && o > mine); }
         // X10: identical non-trivial predicates in two or more files
         foreach (var (text, sites) in predicates.OrderBy(k => k.Key, StringComparer.Ordinal))
         {
             if (sites.Select(s => s.file).Distinct().Count() < 2) continue;
             foreach (var s in sites) ctx.Add(new Finding("duplicated-code", "X10", $"Predicate `{(text.Length > 90 ? text[..90] + "…" : text)}` is written out identically in {sites.Select(x => x.file).Distinct().Count()} files", s.file, s.line, s.line, 0.5));
         }
-        ctx.Measure("X10", Shape.FromFindings(ctx.FindingsFor("X10"), ctx.ProductionKloc, 0.5), note: $"{ctx.FindingsFor("X10").Count()} duplicated predicate sites");
+
 
         // D4: token-window clones (identifiers and literals kept: copies that still agree on their names and constants)
         var index = new Dictionary<string, List<(int s, int i)>>(StringComparer.Ordinal);
@@ -234,11 +268,13 @@ public static class CodeHealth
                 }
                 return merged;
             }).OrderBy(r => r.file, StringComparer.Ordinal).ThenBy(r => r.start).ToList();
-        foreach (var r in regions) ctx.Add(new Finding("duplicated-code", "D4", $"Lines {r.start}–{r.end} duplicate {r.tokens}+ tokens also found at {r.other}", r.file, r.start, r.end, Math.Min(2, r.tokens / 100.0 + 0.5)));
+        var reported = regions.Where(r => !IsOriginal(r.file, new[] { r.other.Split(':')[0] })).ToList();
+        foreach (var r in reported) ctx.Add(new Finding("duplicated-code", "D4", $"Lines {r.start}–{r.end} duplicate {r.tokens}+ tokens also found at {r.other}", r.file, r.start, r.end, Math.Min(2, r.tokens / 100.0 + 0.5)));
+        ctx.Measure("X10", Shape.FromFindings(ctx.FindingsFor("X10"), ctx.ProductionKloc, 0.5), note: $"{ctx.FindingsFor("X10").Count()} duplicated predicate sites");
         var totalTokens = streams.Sum(s => s.Count);
         var dupTokens = covered.Sum(c => c.Count(x => x));
         var share = totalTokens == 0 ? 0 : (double)dupTokens / totalTokens;
-        ctx.Measure("D4", 10 * Math.Max(0, 1 - share * 4), note: $"{dupTokens} of {totalTokens} tokens ({share:P1}) sit in {regions.Count} cloned regions (≥{MinClone} tokens, ≥{MinLines} lines)");
+        ctx.Measure("D4", 10 * Math.Max(0, 1 - share * 5), note: $"{dupTokens} of {totalTokens} tokens ({share:P1}) sit in {regions.Count} cloned regions (≥{MinClone} tokens, ≥{MinLines} lines)");
     }
 
     // ---------- D17 / GD1 / IC1 ----------
@@ -445,7 +481,7 @@ public static class CodeHealth
         foreach (var (p, tree) in ctx.Workspace.ProductionTrees)
         {
             var rel = ctx.Workspace.RelPath(tree.FilePath); var root = tree.GetRoot(); var model = p.Model(tree);
-            var isLibrary = p.Project.IsPackable;
+            var isLibrary = p.Project.IsPackable && p.Project.Role == ProjectRole.Library && !string.Equals(p.Project.OutputType, "Exe", StringComparison.OrdinalIgnoreCase);   // a packable web host or worker is an application, whatever its PackageId says
             foreach (var node in root.DescendantNodes())
             {
                 switch (node)
@@ -475,14 +511,14 @@ public static class CodeHealth
                                 // accepted but not forwarded: an awaited I/O call with no token argument while one is in hand
                                 var tokenName = tokenParam.Identifier.Text;
                                 var dropped = awaitNodes.Select(a => a.Expression is InvocationExpressionSyntax ca && Cs.MemberName(ca.Expression) == "ConfigureAwait" ? (ca.Expression as MemberAccessExpressionSyntax)?.Expression : a.Expression).OfType<InvocationExpressionSyntax>()
-                                    .FirstOrDefault(i => Cs.MemberName(i.Expression).EndsWith("Async", StringComparison.Ordinal) && IoReceiver.IsMatch(ReceiverTypeName(model, i)) && !i.ArgumentList.Arguments.Any(ar => ar.ToString().Contains(tokenName) || ar.ToString().EndsWith("Token") || ar.ToString().Contains("CancellationToken")) && AcceptsToken(model, i));
+                                    .FirstOrDefault(i => Cs.MemberName(i.Expression).EndsWith("Async", StringComparison.Ordinal) && (IoReceiver.IsMatch(ReceiverTypeName(model, i)) || QueryTerminal.IsMatch(Cs.MemberName(i.Expression))) && !i.ArgumentList.Arguments.Any(ar => ar.ToString().Contains(tokenName) || ar.ToString().EndsWith("Token") || ar.ToString().Contains("CancellationToken")) && (AcceptsToken(model, i) || QueryTerminal.IsMatch(Cs.MemberName(i.Expression))));
                                 if (dropped is not null) { var loc = ctx.Loc(md.Identifier); ctx.Add(new Finding("missing-cancellation-propagation", "X2", $"{Cs.TypeName(md)}.{md.Identifier.Text} accepts {tokenName} but does not pass it to {Trunc(dropped.Expression.ToString(), 50)}: an aborted caller keeps the work running", loc.File, loc.Line, loc.Line, 1)); }
                                 else if (md.Identifier.Text == "ExecuteAsync" && !md.Body.ToString().Contains(tokenName) ) { var loc = ctx.Loc(md.Identifier); ctx.Add(new Finding("missing-cancellation-propagation", "X2", $"{Cs.TypeName(md)}.ExecuteAsync never reads its {tokenName}: the host cannot stop it gracefully", loc.File, loc.Line, loc.Line, 1)); }
                             }
                             if (hasToken) withToken++;
                             else
                             {
-                                var io = awaitNodes.Select(a => a.Expression).OfType<InvocationExpressionSyntax>().FirstOrDefault(i => Cs.MemberName(i.Expression).EndsWith("Async", StringComparison.Ordinal) && IoReceiver.IsMatch(ReceiverTypeName(model, i)) && !i.ArgumentList.Arguments.Any(ar => ar.ToString().Contains("CancellationToken") || ar.ToString().EndsWith("Token")));
+                                var io = awaitNodes.Select(a => a.Expression is InvocationExpressionSyntax ca && Cs.MemberName(ca.Expression) == "ConfigureAwait" ? (ca.Expression as MemberAccessExpressionSyntax)?.Expression : a.Expression).OfType<InvocationExpressionSyntax>().FirstOrDefault(i => Cs.MemberName(i.Expression).EndsWith("Async", StringComparison.Ordinal) && (IoReceiver.IsMatch(ReceiverTypeName(model, i)) || QueryTerminal.IsMatch(Cs.MemberName(i.Expression))) && !i.ArgumentList.Arguments.Any(ar => ar.ToString().Contains("CancellationToken") || ar.ToString().EndsWith("Token")));
                                 if (io is not null) { var loc = ctx.Loc(md.Identifier); ctx.Add(new Finding("missing-cancellation-propagation", "X2", $"{Cs.TypeName(md)}.{md.Identifier.Text} awaits {Trunc(io.Expression.ToString(), 50)} with no CancellationToken to pass on", loc.File, loc.Line, loc.Line, 1)); }
                             }
                         }

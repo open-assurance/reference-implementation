@@ -59,7 +59,11 @@ public sealed class Fixture : IDisposable
         return Path.Combine(dir!, "data");
     }
 
-    public void Dispose() { try { Directory.Delete(Root, true); } catch (IOException) { } }
+    public void Dispose()
+    {
+        try { Directory.Delete(Root, true); } catch (IOException) { }
+        foreach (var d in Directory.GetDirectories(Path.GetDirectoryName(Root)!, Path.GetFileName(Root) + ".out*")) { try { Directory.Delete(d, true); } catch (IOException) { } }
+    }
 }
 
 public static class ContextAssertions
