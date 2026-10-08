@@ -1,0 +1,42 @@
+name: DCO
+
+# Every commit in a pull request must carry a "Signed-off-by:" line (Developer Certificate of Origin).
+# Plain git only: no third-party or marketplace action.
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+
+jobs:
+  signoff:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check every commit is signed off
+        env:
+          REPO: ${{ github.repository }}
+          PR: ${{ github.event.pull_request.number }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          git init -q dco && cd dco
+          git fetch -q --no-tags "https://github.com/$REPO.git" "$BASE_SHA" "+refs/pull/$PR/head:refs/remotes/pr/head"
+          git cat-file -e "$HEAD_SHA^{commit}"
+          missing=0; checked=0
+          for c in $(git rev-list --no-merges "$BASE_SHA..$HEAD_SHA"); do
+            checked=$((checked + 1))
+            msg="$(git log -1 --format=%B "$c")"
+            if grep -Eq '^Signed-off-by: .+ <[^>]+>[[:space:]]*$' <<<"$msg"; then
+              echo "ok      $(git log -1 --format='%h %s' "$c")"
+            else
+              echo "::error::Commit $(git log -1 --format='%h' "$c") has no Signed-off-by line: $(git log -1 --format='%s' "$c")"
+              missing=$((missing + 1))
+            fi
+          done
+          echo "$checked commit(s) checked, $missing without sign-off"
+          if [ "$missing" -ne 0 ]; then
+            echo "Sign off with 'git commit -s'. To fix the branch: git rebase --signoff $BASE_SHA && git push --force-with-lease"
+            exit 1
+          fi

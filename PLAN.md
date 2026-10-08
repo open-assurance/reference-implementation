@@ -7,7 +7,7 @@ Status: proposed, awaiting go. Rubric target: `rubric-2026.10.2` (165 dimensions
 Read: spec README, docs/*.md, ADRs, examples, schemas, rubric catalogs; codeassuranceindex.info /spec, /dimensions,
 /rubric, /implementations, /page-cli, the two founding articles; benchmark CONTRACT.md 1.4, taxonomy, answer-key
 schema, registry, coverage matrix, the 15 C# unit keys and READMEs. Not read: ./spec/src, ./spec/tests,
-benchmark/mappings/watchdog*, benchmark/results/*.
+benchmark/mappings/* (other engines' mappings), benchmark/results/*.
 
 The fold, from the text: dimension effective = score × coverage; category = confidence-weighted mean of its
 dimensions (score 0–10 → ×10); meta-dimensions enter their lens directly (×10); lens = worst-first OWA over

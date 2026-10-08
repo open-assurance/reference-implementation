@@ -107,7 +107,7 @@ public static class Output
             ["version"] = "2.1.0",
             ["runs"] = new JsonArray(new JsonObject
             {
-                ["tool"] = new JsonObject { ["driver"] = new JsonObject { ["name"] = EngineName, ["version"] = EngineVersion, ["informationUri"] = "https://github.com/code-assurance-initiative/reference-implementation", ["rules"] = rules } },
+                ["tool"] = new JsonObject { ["driver"] = new JsonObject { ["name"] = EngineName, ["version"] = EngineVersion, ["informationUri"] = "https://github.com/open-assurance/reference-implementation", ["rules"] = rules } },
                 ["originalUriBaseIds"] = new JsonObject { ["%SRCROOT%"] = new JsonObject { ["uri"] = "file:///", ["description"] = new JsonObject { ["text"] = "repository root" } } },
                 ["versionControlProvenance"] = new JsonArray(new JsonObject { ["repositoryUri"] = "file:///", ["revisionId"] = ctx.Repo.HeadCommit }),
                 ["columnKind"] = "utf16CodeUnits",
