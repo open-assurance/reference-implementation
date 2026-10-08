@@ -1,0 +1,63 @@
+# CAI reference implementation (C#/.NET)
+
+A minimal, clean-room engine that measures a C#/.NET repository (ASP.NET Core, Blazor, Razor Pages, workers, libraries)
+against the Code Assurance Index rubric catalog, writes a spec-conformant **evidence bundle**, a **SARIF 2.1.0** log and
+a **scores file**, and folds the bundle to a CAI headline that the published `cai verify` reproduces exactly.
+
+- **Deterministic.** Roslyn syntax and restore-free semantics, git history, manifests, markup (AngleSharp) and offline data
+  snapshots. No network, no LLM, no package restore; two scans of one tree are byte-identical.
+- **Honest about coverage.** 128 of the catalog's 165 dimensions are measured; the rest are written to `notMeasured` with a
+  reason and never carry a score. See [COVERAGE.md](COVERAGE.md).
+- **Benchmarked.** Every C# unit of the public scanner benchmark: 95 % recall, 100 % trap resistance, 4 % noise overall,
+  every miss and every noise finding itemised. See [RESULTS.md](RESULTS.md).
+- **Spec gaps recorded.** Every ambiguity met in the published text, with the resolution and the oracle check, is in
+  [SPEC-GAPS.md](SPEC-GAPS.md).
+
+## Use
+
+```bash
+dotnet build src/Cai.Reference -c Release
+alias cai-ref='dotnet src/Cai.Reference/bin/Release/net10.0/Cai.Reference.dll'
+
+cai-ref scan   <repo> [--out DIR] [--rubric VERSION] [--quality-bar BAR] [--nuget-packages DIR] [--quiet]
+cai-ref score  <evidence.json> [--json]          # fold a bundle (any producer's) to a CAI
+cai-ref verify <evidence.json> [--expect N]      # reproduce a claimed headline; exit 1 on mismatch
+cai-ref mapping --taxonomy taxonomy.json --out benchmark/cai-reference.json
+```
+
+`scan` writes `evidence.json` (validated against the vendored delivery schema in tests), `findings.sarif` (one rule per
+taxonomy concept, repo-relative paths, `commitSha` on history findings) and `scores.json` (dimension → 0–100, for the
+benchmark's score bands). Without `--out` they land in `<repo>/.cai-ref/`. `--nuget-packages` lets the licence dimension
+read nuspecs from a local NuGet cache; everything else needs nothing but the checkout.
+
+The rubric catalogs in `rubrics/` are the published ones; `--rubric` picks a version (default: latest). Data snapshots
+(OSV for NuGet, .NET end-of-life, licence policy) sit in `data/` with their provenance and a refresh script in `tools/`.
+
+## Layout
+
+| Path | What |
+|---|---|
+| `src/Cai.Reference.Scoring` | the fold: catalog loader, evidence model, scorer/verifier (no engine dependency) |
+| `src/Cai.Reference/Engine` | repository and project model, offline Roslyn workspace, git history, detectors per lens, writers |
+| `tests/` | 107 tests: 80 oracle vectors for the fold, detector tests, schema validity, SARIF shape, determinism, project model |
+| `benchmark/` | generated mapping, `run-benchmark.sh`, `results-md.py` |
+| `tools/` | oracle comparison, vector extraction, data-snapshot build, coverage document generator |
+| `PLAN.md`, `COVERAGE.md`, `RESULTS.md`, `SPEC-GAPS.md` | plan, dimension coverage, benchmark results, specification gaps |
+
+## Verification
+
+```bash
+dotnet test                                                       # fold vectors, detectors, outputs
+cai verify <out>/evidence.json --rubrics rubrics                 # the published CLI reproduces the headline
+benchmark/run-benchmark.sh <units> <scanner-benchmark> <out>     # recall / trap resistance / noise per unit
+tools/oracle-compare.py --oracle cai.dll --rubrics rubrics --mine Cai.Reference.dll <out>/*/evidence.json
+```
+
+## Design rules
+
+Detectors generalise: nothing in the engine names a benchmark file, string or path. Every calibration made against the
+benchmark is a rule a reviewer would accept on any repository (a connection-string password needs a connection string
+around it; a knowledge silo is one author across several changes over months; a slice reference must be a real project
+reference). Where the benchmark and a defensible rule disagree, the noise stays and is listed.
+
+Licensed under Apache-2.0 (see `LICENSE`, `NOTICE`).

@@ -181,3 +181,51 @@ repository; **CAT** = `rubrics/rubric-2026.10.2/rubric-catalog.json`; **SCHEMA**
   else that of each of the concept's scoreDimensions".
 - **Resolution.** `scores.json` publishes every measured dimension at `score × 10`, and the mapping names
   `scoreDimensions` per concept where attribution is broader than the measuring dimension.
+
+## D. Gaps met while building the measurement side
+
+These are not fold ambiguities; they are places where the specification or the catalog left a measuring engine to
+choose, recorded so the choices are visible and can be challenged.
+
+### G-21 Conditional lenses have no applicability rule (companion to G-17)
+- **Where:** catalog lenses `domainModelling`, `eventDriven`, `eventSourcing`, `accessibility` carry no "applies when".
+- **Resolution here:** domainModelling applies when DDD building blocks exist (aggregate/entity base types or repositories);
+  eventDriven when commands, events or a bus exist; eventSourcing when an event store or fold methods exist; accessibility
+  when shipped markup exists. Dimensions of an inapplicable lens are written to `notMeasured`, never scored 0. Recorded in
+  the bundle as `lensApplicability` (an extension field, G-15). Oracle: a bundle without those dimensions folds without the
+  lens; the headline reproduces.
+
+### G-22 `evaluator: llm` dimensions and a deterministic engine
+- **Where:** 16 dimensions are `evaluator: llm`; the benchmark plants defects for several of them (`primitive-obsession`,
+  `non-idempotent-message-handler`, `personal-data-in-event-store`, the three text-quality concepts, `adr-conformance`,
+  `documentation-accuracy`).
+- **Resolution here:** not measured, with the reason "needs judgment". A heuristic score for a judged dimension would be an
+  unmeasured score presented as a measured one. Recall on those plants is forfeited and listed in RESULTS.md.
+
+### G-23 "IL Efficiency" (D39) without compilation
+- **Where:** D39 `whatItMeasures` presumes compiled IL. This engine does not restore packages, so it never emits IL.
+- **Resolution here:** a syntactic estimate (calls, member loads, literals, operators, allocations, interpolations per body),
+  reported at confidence 0.7 and named as an estimate in the finding text. An alternative reading, "not measured", was
+  rejected because the benchmark's clean baseline expects a score for the dimension (band 70–100).
+
+### G-24 What counts as "documentation" and "shipped markup"
+- **Where:** several dimensions read "documentation" (P5 restore procedures, AC7 accessibility statements) or "pages" (AC1–AC6)
+  without saying where those live.
+- **Resolution here:** documentation = README files, `docs/`, `doc/`, `runbooks/`, `ops/`, `wiki/`, decision folders; markup =
+  `.razor/.cshtml/.html` outside vendored, build, mock-up, wireframe, prototype and documentation folders. A Markdown file in
+  a fixture or a benchmark key is not the project's documentation. Without this, a unit's own answer-key README credited it
+  with a restore procedure.
+
+### G-25 Benchmark contract: pairs, regions and repository-level entries
+- **Where:** CONTRACT 1.4 matches a result to an entry by concept, file and start line (±3), or by concept alone when the entry
+  has no file.
+- **Observed:** (a) a finding that covers the key's region but starts more than three lines earlier is counted as noise;
+  (b) findings on the second half of a pair (clone, change coupling, stale module) are noise when the key labels one half;
+  (c) a repository-level finding given a file stops matching a file-less entry, and a file-less finding never matches a clean
+  file. This engine reports pairs on both sides (predicates, change coupling) or on the newer side (clone blocks) and keeps
+  `scattered-domain-rule` repository-level; the resulting noise is itemised in RESULTS.md rather than tuned away.
+
+### G-26 Scores file for score bands
+- **Where:** the harness takes `--scores {concept-or-dimension: 0–100}`; the spec defines no such artefact.
+- **Resolution here:** `scores.json` beside the evidence bundle, dimension id → effective score ×10, written from the same
+  measurements the bundle carries (so a band is judged on what the fold used).

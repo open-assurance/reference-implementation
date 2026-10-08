@@ -75,7 +75,7 @@ CLI: `cai-ref scan <repo> [--rubrics DIR] [--rubric V] [--out DIR] [--quality-ba
 ## 3. External tools / packages (all pinned, all offline at scan time)
 
 - Microsoft.CodeAnalysis.CSharp 5.9.0 — parsing + semantic model.
-- Microsoft.AspNetCore.Razor.Language 6.0.36 — .razor/.cshtml/.html markup tree for accessibility and JS interop.
+- AngleSharp 1.8.4 — HTML DOM (with source positions) for .razor/.cshtml/.html accessibility checks after Razor code is stripped. (Plan originally named Microsoft.AspNetCore.Razor.Language; its syntax tree is internal, so it was replaced.)
 - YamlDotNet 18.1.0 — Kubernetes, compose, workflows.
 - JsonSchema.Net 9.4.0 (tests only) — evidence validated against `cai-delivery-1.0.schema.json#/$defs/evidence`.
 - xunit + Microsoft.NET.Test.Sdk.
@@ -98,3 +98,9 @@ See the table in the reply / COVERAGE.md (kept in sync).
 5. Readiness and tests (D9–D11, P1–P12, R4, PF1–PF3, X8).
 6. Accessibility (AC1–AC7).
 7. Full benchmark run (15 C# units at registered tags) → RESULTS.md; COVERAGE.md, SPEC-GAPS.md, README final.
+
+## 6. Status (2026-10-08)
+
+All milestones delivered and committed locally (no remote yet): fold + 80 oracle vectors, engine over 128 of 165
+dimensions (COVERAGE.md), benchmark run over all 15 C# units (RESULTS.md: 95 % recall, 100 % trap resistance, 4 % noise),
+`cai verify` Δ 0.00 on every bundle, scans of stellae, Oqtane and Blazored Modal, 107 tests, 26 specification gaps.

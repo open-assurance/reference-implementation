@@ -45,7 +45,6 @@ public static class Coverage
         ["personal-data-in-event-store"] = Llm, ["personal-data-inventory"] = Llm, ["alt-text-quality"] = Llm, ["link-and-button-text-quality"] = Llm,
         ["heading-and-label-text-quality"] = Llm, ["vulnerability-disclosure-policy-quality"] = Llm, ["environment-separation"] = Llm,
         ["unauthenticated-reachable-endpoint"] = Runtime, ["reproducible-boot"] = Runtime, ["undocumented-api-endpoint"] = Runtime, ["third-party-data-flow"] = Runtime, ["unexpected-exposed-port"] = Runtime,
-        ["secret-in-process-arguments"] = "not implemented",
         ["consent-not-checked"] = "not implemented",
     };
 
