@@ -42,7 +42,7 @@ public sealed class DataSnapshots
                 NuGetVersion? intro = null;
                 foreach (var e in r.Events)
                 {
-                    if (e.introduced is not null) { intro = e.introduced == "0" ? NuGetVersion.Zero : NuGetVersion.TryParse(e.introduced, out var iv) ? iv : null; if (intro is not null && ReferenceEquals(e, r.Events[^1]) && v.CompareTo(intro.Value) >= 0) return true; continue; }
+                    if (e.introduced is not null) { intro = e.introduced == "0" ? NuGetVersion.Zero : NuGetVersion.TryParse(e.introduced, out var iv) ? iv : null; continue; }
                     if (intro is null) continue;
                     if (e.fixedVersion is not null && NuGetVersion.TryParse(e.fixedVersion, out var fv)) { if (v.CompareTo(intro.Value) >= 0 && v.CompareTo(fv) < 0) return true; intro = null; }
                     else if (e.lastAffected is not null && NuGetVersion.TryParse(e.lastAffected, out var la)) { if (v.CompareTo(intro.Value) >= 0 && v.CompareTo(la) <= 0) return true; intro = null; }
